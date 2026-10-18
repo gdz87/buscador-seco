@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buscador SECOP Colombia</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f8f9fb;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  --bg-hover: #f0f2f5;
+  --bg-badge: #e8ecf1;
+  --fg: #1a1d23;
+  --fg-secondary: #5a6170;
+  --fg-muted: #8b92a0;
+  --border: #dde1e8;
+  --border-focus: #2a78d6;
+  --accent: #2a78d6;
+  --accent-hover: #1e5faa;
+  --accent-bg: #eaf1fb;
+  --secop1: #eb6834;
+  --secop2: #2a78d6;
+  --procesos: #1baf7a;
+  --tvec: #9065d6;
+  --success: #1baf7a;
+  --warning: #eda100;
+  --error: #e34948;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.08);
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12141a; --bg-card: #1c1f27; --bg-input: #23272f;
+    --bg-hover: #282c36; --bg-badge: #2a2e38; --fg: #e8eaef;
+    --fg-secondary: #a0a7b5; --fg-muted: #6b7280; --border: #2e333d;
+    --border-focus: #3987e5; --accent: #3987e5; --accent-hover: #5a9fef;
+    --accent-bg: #1e2a3d; --secop1: #d95926; --secop2: #3987e5;
+    --procesos: #199e70; --tvec: #9085e9; --success: #199e70;
+    --warning: #c98500; --error: #e66767;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.2); --shadow-md: 0 4px 12px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12141a; --bg-card: #1c1f27; --bg-input: #23272f;
+  --bg-hover: #282c36; --bg-badge: #2a2e38; --fg: #e8eaef;
+  --fg-secondary: #a0a7b5; --fg-muted: #6b7280; --border: #2e333d;
+  --border-focus: #3987e5; --accent: #3987e5; --accent-hover: #5a9fef;
+  --accent-bg: #1e2a3d; --secop1: #d95926; --secop2: #3987e5;
+  --procesos: #199e70; --tvec: #9085e9; --success: #199e70;
+  --warning: #c98500; --error: #e66767;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.2); --shadow-md: 0 4px 12px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.5;
+  padding: 0 16px;
+  min-height: 100dvh;
+}
+.app-header { padding: 24px 0 16px; text-align: center; max-width: 900px; margin: 0 auto; }
+.app-header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; text-wrap: balance; }
+.app-header h1 .icon { font-size: 1.3em; margin-right: 6px; }
+.app-header p { color: var(--fg-secondary); font-size: .875rem; margin-top: 4px; }
+
+.tabs { display: flex; gap: 4px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 4px; max-width: 480px; margin: 0 auto 20px; }
+.tab-btn { flex: 1; padding: 10px 12px; border: none; background: transparent; color: var(--fg-secondary); font-family: var(--font); font-size: .875rem; font-weight: 500; border-radius: var(--radius-sm); cursor: pointer; transition: all .15s; }
+.tab-btn:hover { color: var(--fg); background: var(--bg-hover); }
+.tab-btn.active { background: var(--accent); color: #fff; box-shadow: var(--shadow-sm); }
+
+.tab-panel { display: none; max-width: 900px; margin: 0 auto; }
+.tab-panel.active { display: block; }
+
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm); margin-bottom: 16px; }
+.card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.card h2 .badge-count { font-size: .75rem; font-weight: 600; background: var(--accent-bg); color: var(--accent); padding: 2px 8px; border-radius: 99px; }
+
+.search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-row input[type="text"] { flex: 1; }
+input, select { font-family: var(--font); font-size: .875rem; padding: 10px 12px; background: var(--bg-input); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-sm); transition: border-color .15s; width: 100%; }
+input:focus, select:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(42,120,214,.15); }
+input::placeholder { color: var(--fg-muted); }
+
+.filters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.filter-group label { display: block; font-size: .75rem; font-weight: 500; color: var(--fg-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+
+.btn { font-family: var(--font); font-size: .875rem; font-weight: 600; padding: 10px 20px; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-secondary { background: var(--bg-hover); color: var(--fg-secondary); border: 1px solid var(--border); }
+.btn-secondary:hover { color: var(--fg); background: var(--bg-badge); }
+
+.actions-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.source-toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+.source-toggle { font-family: var(--font); font-size: .75rem; font-weight: 600; padding: 5px 10px; border-radius: 99px; border: 2px solid; cursor: pointer; background: transparent; transition: all .15s; }
+.source-toggle.active { color: #fff !important; }
+.source-toggle[data-source="secop1"] { border-color: var(--secop1); color: var(--secop1); }
+.source-toggle[data-source="secop1"].active { background: var(--secop1); }
+.source-toggle[data-source="secop2"] { border-color: var(--secop2); color: var(--secop2); }
+.source-toggle[data-source="secop2"].active { background: var(--secop2); }
+.source-toggle[data-source="procesos"] { border-color: var(--procesos); color: var(--procesos); }
+.source-toggle[data-source="procesos"].active { background: var(--procesos); }
+.source-toggle[data-source="tvec"] { border-color: var(--tvec); color: var(--tvec); }
+.source-toggle[data-source="tvec"].active { background: var(--tvec); }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+table { width: 100%; border-collapse: collapse; font-size: .8125rem; min-width: 700px; }
+thead { background: var(--bg-hover); position: sticky; top: 0; z-index: 1; }
+th { padding: 10px 12px; text-align: left; font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; color: var(--fg-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; max-width: 280px; }
+tr:last-child td { border-bottom: none; }
+tr:hover { background: var(--bg-hover); }
+td.object-col { word-break: break-word; min-width: 180px; }
+td.val-col { font-family: var(--mono); font-size: .8rem; white-space: nowrap; text-align: right; }
+.src-badge { font-size: .65rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; color: #fff; white-space: nowrap; }
+.src-badge.secop1 { background: var(--secop1); }
+.src-badge.secop2 { background: var(--secop2); }
+.src-badge.procesos { background: var(--procesos); }
+.src-badge.tvec { background: var(--tvec); }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.pagination button { font-family: var(--font); font-size: .8125rem; padding: 6px 14px; border: 1px solid var(--border); background: var(--bg-card); color: var(--fg-secondary); border-radius: var(--radius-sm); cursor: pointer; }
+.pagination button:hover { background: var(--bg-hover); }
+.pagination button:disabled { opacity: .4; cursor: not-allowed; }
+.pagination .page-info { font-size: .8125rem; color: var(--fg-muted); }
+
+.status-msg { text-align: center; padding: 40px 20px; color: var(--fg-muted); font-size: .9rem; }
+.status-msg .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; text-align: center; }
+.stat-card .value { font-size: 1.5rem; font-weight: 700; color: var(--accent); font-family: var(--mono); }
+.stat-card .label { font-size: .75rem; color: var(--fg-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .03em; }
+
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.chart-card h3 { font-size: .875rem; font-weight: 600; margin-bottom: 12px; }
+.chart-card canvas { max-height: 280px; }
+
+.profile-header { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 16px; }
+.profile-avatar { width: 56px; height: 56px; background: var(--accent-bg); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; flex-shrink: 0; }
+.profile-info h2 { margin-bottom: 2px; }
+.profile-info p { color: var(--fg-secondary); font-size: .875rem; }
+.profile-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+.profile-stat .num { font-size: 1.25rem; font-weight: 700; font-family: var(--mono); }
+.profile-stat .lbl { font-size: .7rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .03em; }
+
+.app-footer { text-align: center; padding: 24px 0 32px; color: var(--fg-muted); font-size: .75rem; max-width: 900px; margin: 0 auto; }
+
+@media (max-width: 600px) {
+  .app-header h1 { font-size: 1.25rem; }
+  .search-row { flex-direction: column; }
+  .filters-grid { grid-template-columns: 1fr; }
+  .actions-bar { flex-direction: column; align-items: stretch; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .tab-btn { font-size: .78rem; padding: 8px 6px; }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1><span class="icon">🔍</span>Buscador SECOP Colombia</h1>
+  <p>Consulta contratos públicos en SECOP I, SECOP II y TVEC — datos abiertos de Colombia Compra Eficiente</p>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab-btn active" role="tab" data-tab="busqueda" aria-selected="true">Búsqueda</button>
+  <button class="tab-btn" role="tab" data-tab="analitica" aria-selected="false">Analítica</button>
+  <button class="tab-btn" role="tab" data-tab="contratista" aria-selected="false">Contratista</button>
+</nav>
+
+<section id="tab-busqueda" class="tab-panel active" role="tabpanel">
+  <div class="card">
+    <h2>Buscar contratos</h2>
+    <div class="search-row">
+      <input type="text" id="searchInput" placeholder="Nombre, NIT, cédula del contratista o palabra clave…" aria-label="Búsqueda">
+      <button class="btn btn-primary" id="searchBtn" onclick="doSearch()">Buscar</button>
+    </div>
+    <details id="filtersToggle">
+      <summary style="cursor:pointer;font-size:.8125rem;font-weight:500;color:var(--accent);margin-bottom:10px;">Filtros avanzados</summary>
+      <div class="filters-grid">
+        <div class="filter-group"><label for="fDept">Departamento</label><input type="text" id="fDept" placeholder="Ej: Boyacá"></div>
+        <div class="filter-group"><label for="fEntity">Entidad</label><input type="text" id="fEntity" placeholder="Nombre de entidad"></div>
+        <div class="filter-group"><label for="fState">Estado</label>
+          <select id="fState"><option value="">Todos</option><option>Celebrado</option><option>En ejecución</option><option>Liquidado</option><option>Terminado</option><option>Borrador</option><option>Cerrado</option></select>
+        </div>
+        <div class="filter-group"><label for="fDateFrom">Fecha desde</label><input type="date" id="fDateFrom"></div>
+        <div class="filter-group"><label for="fDateTo">Fecha hasta</label><input type="date" id="fDateTo"></div>
+        <div class="filter-group"><label for="fValMin">Valor mínimo ($)</label><input type="number" id="fValMin" placeholder="0" min="0"></div>
+        <div class="filter-group"><label for="fValMax">Valor máximo ($)</label><input type="number" id="fValMax" placeholder="Sin límite" min="0"></div>
+        <div class="filter-group"><label for="fModality">Modalidad</label>
+          <select id="fModality"><option value="">Todas</option><option>Contratación Directa</option><option>Mínima Cuantía</option><option>Selección Abreviada</option><option>Licitación Pública</option><option>Concurso de Méritos</option></select>
+        </div>
+      </div>
+    </details>
+  </div>
+
+  <div class="actions-bar">
+    <div class="source-toggles">
+      <button class="source-toggle active" data-source="secop1" onclick="toggleSource(this)">SECOP I</button>
+      <button class="source-toggle active" data-source="secop2" onclick="toggleSource(this)">SECOP II</button>
+      <button class="source-toggle active" data-source="procesos" onclick="toggleSource(this)">Procesos II</button>
+      <button class="source-toggle active" data-source="tvec" onclick="toggleSource(this)">TVEC</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-secondary" onclick="exportCSV()" id="exportBtn" hidden>⬇ Exportar CSV</button>
+      <span id="resultCount" style="font-size:.8rem;color:var(--fg-muted);align-self:center;"></span>
+    </div>
+  </div>
+
+  <div id="resultsArea">
+    <div class="status-msg" id="emptyState">
+      <span class="icon">📋</span>
+      Ingresa un término de búsqueda para consultar contratos públicos en todas las fuentes
+    </div>
+  </div>
+</section>
+
+<section id="tab-analitica" class="tab-panel" role="tabpanel">
+  <div id="analyticsEmpty" class="status-msg"><span class="icon">📊</span>Realiza una búsqueda primero para ver analíticas de los resultados</div>
+  <div id="analyticsContent" hidden>
+    <div class="stats-row" id="statsRow"></div>
+    <div class="charts-grid" id="chartsGrid"></div>
+  </div>
+</section>
+
+<section id="tab-contratista" class="tab-panel" role="tabpanel">
+  <div class="card">
+    <h2>Perfil de contratista</h2>
+    <div class="search-row">
+      <input type="text" id="nitInput" placeholder="NIT o número de cédula del contratista…" aria-label="NIT contratista">
+      <button class="btn btn-primary" onclick="searchContratista()">Consultar</button>
+    </div>
+  </div>
+  <div id="contratistaArea">
+    <div class="status-msg" id="contratistaEmpty"><span class="icon">👤</span>Ingresa un NIT o cédula para ver el perfil completo del contratista</div>
+  </div>
+</section>
+
+<footer class="app-footer">
+  Datos abiertos de <a href="https://colombiacompra.gov.co" target="_blank" rel="noopener">Colombia Compra Eficiente</a> vía API SODA de datos.gov.co<br>
+  Esta herramienta no almacena datos · Consultas en tiempo real
+</footer>
+
+<script>
+const API_BASE = 'https://www.datos.gov.co/resource';
+const DATASETS = {
+  secop2:   { id: 'jbjy-vk9h', label: 'SECOP II',   badge: 'secop2' },
+  procesos: { id: 'p6dx-8zbt', label: 'Procesos II', badge: 'procesos' },
+  secop1:   { id: 'f789-7hwg', label: 'SECOP I',     badge: 'secop1' },
+  tvec:     { id: 'rgxm-mmea', label: 'TVEC',         badge: 'tvec' }
+};
+const FIELD_MAP = {
+  secop2: { entidad:'nombre_entidad', nit_entidad:'nit_entidad', departamento:'departamento', ciudad:'ciudad', doc_proveedor:'documento_proveedor', proveedor:'proveedor_adjudicado', objeto:'objeto_del_contrato', descripcion:'descripcion_del_proceso', valor:'valor_del_contrato', fecha:'fecha_de_firma', estado:'estado_contrato', url:'urlproceso', modalidad:'modalidad_de_contratacion', tipo:'tipo_de_contrato' },
+  procesos: { entidad:'entidad', nit_entidad:'nit_entidad', departamento:'departamento_entidad', ciudad:'ciudad_entidad', doc_proveedor:'nit_del_proveedor_adjudicado', proveedor:'nombre_del_proveedor', objeto:'descripci_n_del_procedimiento', descripcion:'descripci_n_del_procedimiento', valor:'valor_total_adjudicacion', fecha:'fecha_de_publicacion_del', estado:'estado_del_procedimiento', url:'urlproceso', modalidad:'modalidad_de_contratacion', tipo:'tipo_de_contrato' },
+  secop1: { entidad:'nombre_entidad', nit_entidad:'nit_de_la_entidad', departamento:'departamento_entidad', ciudad:'municipio_entidad', doc_proveedor:'identificacion_del_contratista', proveedor:'nom_razon_social_contratista', objeto:'detalle_del_objeto_a_contratar', descripcion:'detalle_del_objeto_a_contratar', valor:'cuantia_contrato', fecha:'fecha_de_firma_del_contrato', estado:'estado_del_proceso', url:'ruta_proceso_en_secop_i', modalidad:'modalidad_de_contratacion', tipo:'tipo_de_contrato' },
+  tvec: { entidad:'entidad', nit_entidad:'nit_entidad', departamento:'ciudad', ciudad:'ciudad', doc_proveedor:'nit_proveedor', proveedor:'proveedor', objeto:'items', descripcion:'items', valor:'total', fecha:'fecha', estado:'estado', url:null, modalidad:'agregacion', tipo:'agregacion' }
+};
+
+let allResults = [], filteredResults = [], currentPage = 0;
+const PAGE_SIZE = 20;
+let activeSources = new Set(['secop1','secop2','procesos','tvec']);
+let chartInstances = [];
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+function toggleSource(btn) {
+  const src = btn.dataset.source;
+  btn.classList.toggle('active');
+  if (activeSources.has(src)) activeSources.delete(src); else activeSources.add(src);
+  applyFilters();
+}
+
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+document.getElementById('nitInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchContratista(); });
+
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const area = document.getElementById('resultsArea');
+  area.innerHTML = '<div class="status-msg"><div class="spinner"></div><br>Consultando las 4 fuentes de datos…</div>';
+  document.getElementById('searchBtn').disabled = true;
+  try {
+    allResults = [];
+    const results = await Promise.allSettled(Object.entries(DATASETS).map(([key, ds]) => fetchDataset(key, ds, q)));
+    results.forEach(r => { if (r.status === 'fulfilled' && r.value) allResults.push(...r.value); });
+    allResults.sort((a, b) => (b._date || 0) - (a._date || 0));
+    applyFilters();
+    updateAnalytics();
+  } catch (err) {
+    area.innerHTML = '<div class="status-msg"><span class="icon">⚠️</span>Error: ' + esc(err.message) + '</div>';
+  }
+  document.getElementById('searchBtn').disabled = false;
+}
+
+async function fetchDataset(key, ds, q) {
+  const fm = FIELD_MAP[key];
+  const isNumeric = /^\d+$/.test(q);
+  let whereClause = '';
+  const filters = getFilters(key);
+  if (isNumeric) {
+    whereClause = fm.doc_proveedor + "='" + q + "'";
+  } else {
+    whereClause = "upper(" + fm.proveedor + ") like upper('%" + encodeClean(q) + "%')";
+  }
+  if (filters) whereClause += ' AND ' + filters;
+
+  const params = new URLSearchParams({ '$where': whereClause, '$limit': '500' });
+  if (fm.fecha) params.set('$order', fm.fecha + ' DESC');
+
+  const url = API_BASE + '/' + ds.id + '.json?' + params;
+  const resp = await fetch(url);
+  if (!resp.ok) return [];
+  const data = await resp.json();
+  return data.map(row => normalize(row, key, ds));
+}
+
+function getFilters(key) {
+  const fm = FIELD_MAP[key]; const parts = [];
+  const dept = document.getElementById('fDept').value.trim();
+  if (dept && fm.departamento) parts.push("upper(" + fm.departamento + ") like upper('%" + encodeClean(dept) + "%')");
+  const entity = document.getElementById('fEntity').value.trim();
+  if (entity && fm.entidad) parts.push("upper(" + fm.entidad + ") like upper('%" + encodeClean(entity) + "%')");
+  const state = document.getElementById('fState').value;
+  if (state && fm.estado) parts.push("upper(" + fm.estado + ") like upper('%" + encodeClean(state) + "%')");
+  const dateFrom = document.getElementById('fDateFrom').value;
+  if (dateFrom && fm.fecha) parts.push(fm.fecha + " >= '" + dateFrom + "'");
+  const dateTo = document.getElementById('fDateTo').value;
+  if (dateTo && fm.fecha) parts.push(fm.fecha + " <= '" + dateTo + "T23:59:59'");
+  const valMin = document.getElementById('fValMin').value;
+  if (valMin && fm.valor) parts.push(fm.valor + ' >= ' + valMin);
+  const valMax = document.getElementById('fValMax').value;
+  if (valMax && fm.valor) parts.push(fm.valor + ' <= ' + valMax);
+  const modality = document.getElementById('fModality').value;
+  if (modality && fm.modalidad) parts.push("upper(" + fm.modalidad + ") like upper('%" + encodeClean(modality) + "%')");
+  return parts.length ? parts.join(' AND ') : '';
+}
+
+function normalize(row, key, ds) {
+  const fm = FIELD_MAP[key];
+  const val = parseFloat(row[fm.valor]) || 0;
+  const rawDate = row[fm.fecha] || '';
+  const dateObj = rawDate ? new Date(rawDate) : null;
+  return {
+    _source: key, _sourceLabel: ds.label, _badge: ds.badge,
+    _date: dateObj ? dateObj.getTime() : 0,
+    entidad: row[fm.entidad]||'', departamento: row[fm.departamento]||'',
+    doc_proveedor: row[fm.doc_proveedor]||'', proveedor: row[fm.proveedor]||'',
+    objeto: row[fm.objeto]||row[fm.descripcion]||'',
+    valor: val, valorFmt: formatCOP(val),
+    fecha: dateObj ? dateObj.toLocaleDateString('es-CO') : '', fechaISO: rawDate,
+    estado: row[fm.estado]||'', url: fm.url ? row[fm.url]||'' : '',
+    modalidad: row[fm.modalidad]||'', tipo: row[fm.tipo]||'', _raw: row
+  };
+}
+
+function formatCOP(n) { return n ? '$' + n.toLocaleString('es-CO',{maximumFractionDigits:0}) : '$0'; }
+function encodeClean(s) { return s.replace(/'/g,"''"); }
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+function truncate(s,n) { return s.length>n ? s.substring(0,n)+'…' : s; }
+
+function applyFilters() { filteredResults = allResults.filter(r => activeSources.has(r._source)); currentPage = 0; renderResults(); }
+
+function renderResults() {
+  const area = document.getElementById('resultsArea');
+  if (!filteredResults.length) {
+    area.innerHTML = '<div class="status-msg"><span class="icon">📭</span>No se encontraron resultados con los filtros actuales</div>';
+    document.getElementById('resultCount').textContent = '';
+    document.getElementById('exportBtn').hidden = true; return;
+  }
+  const total = filteredResults.length, totalPages = Math.ceil(total/PAGE_SIZE);
+  const start = currentPage*PAGE_SIZE, page = filteredResults.slice(start, start+PAGE_SIZE);
+  document.getElementById('resultCount').textContent = total + ' resultado' + (total!==1?'s':'');
+  document.getElementById('exportBtn').hidden = false;
+  let h = '<div class="table-wrap"><table><thead><tr><th>Fuente</th><th>Contratista</th><th>Entidad</th><th>Objeto</th><th style="text-align:right">Valor</th><th>Fecha</th><th>Estado</th><th>Ver</th></tr></thead><tbody>';
+  for (const r of page) {
+    h += '<tr><td><span class="src-badge '+r._badge+'">'+esc(r._sourceLabel)+'</span></td>';
+    h += '<td><strong>'+esc(r.proveedor)+'</strong><br><span style="color:var(--fg-muted);font-size:.75rem">'+esc(r.doc_proveedor)+'</span></td>';
+    h += '<td>'+esc(r.entidad)+'</td><td class="object-col">'+esc(truncate(r.objeto,120))+'</td>';
+    h += '<td class="val-col">'+r.valorFmt+'</td><td style="white-space:nowrap">'+esc(r.fecha)+'</td>';
+    h += '<td>'+esc(r.estado)+'</td>';
+    h += '<td>'+(r.url?'<a href="'+esc(r.url)+'" target="_blank" rel="noopener">Abrir ↗</a>':'—')+'</td></tr>';
+  }
+  h += '</tbody></table></div>';
+  h += '<div class="pagination"><button onclick="goPage('+(currentPage-1)+')" '+(currentPage===0?'disabled':'')+'>← Anterior</button>';
+  h += '<span class="page-info">Página '+(currentPage+1)+' de '+totalPages+'</span>';
+  h += '<button onclick="goPage('+(currentPage+1)+')" '+(currentPage>=totalPages-1?'disabled':'')+'>Siguiente →</button></div>';
+  area.innerHTML = h;
+}
+
+function goPage(p) { currentPage=p; renderResults(); document.getElementById('resultsArea').scrollIntoView({behavior:'smooth',block:'start'}); }
+
+function exportCSV() {
+  if (!filteredResults.length) return;
+  const headers = ['Fuente','Contratista','Documento','Entidad','Departamento','Objeto','Valor','Fecha','Estado','Modalidad','Tipo','URL'];
+  const rows = filteredResults.map(r => [r._sourceLabel,r.proveedor,r.doc_proveedor,r.entidad,r.departamento,'"'+(r.objeto||'').replace(/"/g,'""')+'"',r.valor,r.fechaISO,r.estado,r.modalidad,r.tipo,r.url]);
+  let csv = '﻿' + headers.join(';') + '\n' + rows.map(r=>r.join(';')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=u; a.download='secop_resultados.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(u);
+}
+
+function updateAnalytics() {
+  const data = allResults;
+  if (!data.length) { document.getElementById('analyticsEmpty').hidden=false; document.getElementById('analyticsContent').hidden=true; return; }
+  document.getElementById('analyticsEmpty').hidden=true; document.getElementById('analyticsContent').hidden=false;
+  const totalVal = data.reduce((s,r)=>s+r.valor,0), avgVal = totalVal/data.length;
+  const entities = new Set(data.map(r=>r.entidad));
+  document.getElementById('statsRow').innerHTML =
+    '<div class="stat-card"><div class="value">'+data.length.toLocaleString('es-CO')+'</div><div class="label">Contratos</div></div>'+
+    '<div class="stat-card"><div class="value">'+formatCOP(totalVal)+'</div><div class="label">Valor total</div></div>'+
+    '<div class="stat-card"><div class="value">'+formatCOP(avgVal)+'</div><div class="label">Promedio</div></div>'+
+    '<div class="stat-card"><div class="value">'+entities.size+'</div><div class="label">Entidades</div></div>';
+  chartInstances.forEach(c=>c.destroy()); chartInstances=[];
+  const isDark = window.matchMedia('(prefers-color-scheme:dark)').matches || document.documentElement.getAttribute('data-theme')==='dark';
+  Chart.defaults.color = isDark?'#a0a7b5':'#5a6170';
+  Chart.defaults.borderColor = isDark?'rgba(255,255,255,.08)':'rgba(0,0,0,.06)';
+  const cg = document.getElementById('chartsGrid'); cg.innerHTML='';
+
+  const bySource={}; data.forEach(r=>{bySource[r._sourceLabel]=(bySource[r._sourceLabel]||0)+1;});
+  mkBar(cg,'Contratos por fuente',Object.keys(bySource),Object.values(bySource),['#eb6834','#2a78d6','#1baf7a','#9065d6'],isDark);
+
+  const byState={}; data.forEach(r=>{const s=r.estado||'Sin estado'; byState[s]=(byState[s]||0)+1;});
+  const se=Object.entries(byState).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  mkBar(cg,'Por estado',se.map(e=>e[0]),se.map(e=>e[1]),['#2a78d6'],isDark);
+
+  const byMod={}; data.forEach(r=>{const m=r.modalidad||'Sin modalidad'; byMod[m]=(byMod[m]||0)+1;});
+  const me=Object.entries(byMod).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  mkBar(cg,'Por modalidad',me.map(e=>truncate(e[0],25)),me.map(e=>e[1]),['#1baf7a'],isDark);
+
+  const vbs={}; data.forEach(r=>{vbs[r._sourceLabel]=(vbs[r._sourceLabel]||0)+r.valor;});
+  mkBar(cg,'Valor total por fuente',Object.keys(vbs),Object.values(vbs).map(v=>Math.round(v/1e6)),['#eb6834','#2a78d6','#1baf7a','#9065d6'],isDark,'Millones COP');
+}
+
+function mkBar(container,title,labels,values,colors,isDark,yLabel) {
+  const card=document.createElement('div'); card.className='chart-card';
+  card.innerHTML='<h3>'+title+'</h3><canvas></canvas>'; container.appendChild(card);
+  const bg=colors.length>=labels.length?colors.slice(0,labels.length):labels.map((_,i)=>colors[i%colors.length]);
+  const chart=new Chart(card.querySelector('canvas').getContext('2d'),{
+    type:'bar', data:{labels,datasets:[{data:values,backgroundColor:bg.map(c=>c+(isDark?'cc':'aa')),borderColor:bg,borderWidth:2,borderRadius:4,borderSkipped:false,barPercentage:.7}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>yLabel?ctx.parsed.y.toLocaleString('es-CO')+' '+yLabel:ctx.parsed.y.toLocaleString('es-CO')}}},
+    scales:{x:{grid:{display:false},ticks:{maxRotation:45,font:{size:11}}},y:{beginAtZero:true,title:yLabel?{display:true,text:yLabel,font:{size:11}}:{},ticks:{callback:v=>v>=1e6?(v/1e6).toFixed(0)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v}}}}
+  }); chartInstances.push(chart);
+}
+
+async function searchContratista() {
+  const nit=document.getElementById('nitInput').value.trim();
+  if(!nit) return;
+  const area=document.getElementById('contratistaArea');
+  area.innerHTML='<div class="status-msg"><div class="spinner"></div><br>Buscando contratista en todas las fuentes…</div>';
+  try {
+    const results = await Promise.all(Object.entries(DATASETS).map(([key,ds])=>{
+      const fm=FIELD_MAP[key];
+      const params=new URLSearchParams({'$where':fm.doc_proveedor+"='"+encodeClean(nit)+"'",'$limit':'1000'});
+      return fetch(API_BASE+'/'+ds.id+'.json?'+params).then(r=>r.ok?r.json():[]).then(data=>data.map(row=>normalize(row,key,ds))).catch(()=>[]);
+    }));
+    const all=results.flat().sort((a,b)=>(b._date||0)-(a._date||0));
+    if(!all.length){area.innerHTML='<div class="status-msg"><span class="icon">🔍</span>No se encontraron contratos para este NIT/cédula</div>';return;}
+    const name=all.find(r=>r.proveedor)?.proveedor||'Desconocido';
+    const totalVal=all.reduce((s,r)=>s+r.valor,0);
+    const entidades=new Set(all.map(r=>r.entidad).filter(Boolean));
+    const deptos=new Set(all.map(r=>r.departamento).filter(Boolean));
+    const initials=name.split(' ').slice(0,2).map(w=>(w[0]||'')).join('').toUpperCase();
+    let h='<div class="card"><div class="profile-header"><div class="profile-avatar">'+esc(initials)+'</div>';
+    h+='<div class="profile-info" style="flex:1;min-width:0"><h2 style="font-size:1.125rem">'+esc(name)+'</h2>';
+    h+='<p>NIT/CC: '+esc(nit)+' · '+(deptos.size?[...deptos].join(', '):'Sin depto.')+'</p></div></div>';
+    h+='<div class="profile-stats"><div class="profile-stat"><div class="num">'+all.length+'</div><div class="lbl">Contratos</div></div>';
+    h+='<div class="profile-stat"><div class="num">'+formatCOP(totalVal)+'</div><div class="lbl">Valor total</div></div>';
+    h+='<div class="profile-stat"><div class="num">'+entidades.size+'</div><div class="lbl">Entidades</div></div></div></div>';
+    h+='<div class="card"><h2>Historial de contratos <span class="badge-count">'+all.length+'</span></h2>';
+    h+='<div class="table-wrap"><table><thead><tr><th>Fuente</th><th>Entidad</th><th>Objeto</th><th style="text-align:right">Valor</th><th>Fecha</th><th>Estado</th><th>Ver</th></tr></thead><tbody>';
+    for(const r of all.slice(0,50)){
+      h+='<tr><td><span class="src-badge '+r._badge+'">'+esc(r._sourceLabel)+'</span></td>';
+      h+='<td>'+esc(r.entidad)+'</td><td class="object-col">'+esc(truncate(r.objeto,100))+'</td>';
+      h+='<td class="val-col">'+r.valorFmt+'</td><td style="white-space:nowrap">'+esc(r.fecha)+'</td>';
+      h+='<td>'+esc(r.estado)+'</td><td>'+(r.url?'<a href="'+esc(r.url)+'" target="_blank" rel="noopener">Abrir ↗</a>':'—')+'</td></tr>';
+    }
+    h+='</tbody></table></div>';
+    if(all.length>50) h+='<p style="color:var(--fg-muted);font-size:.8rem;margin-top:8px;text-align:center;">Mostrando 50 de '+all.length+' contratos</p>';
+    h+='</div>';
+    area.innerHTML=h;
+  } catch(err) { area.innerHTML='<div class="status-msg"><span class="icon">⚠️</span>Error: '+esc(err.message)+'</div>'; }
+}
+</script>
+</body>
+</html>
