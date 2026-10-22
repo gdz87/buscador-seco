@@ -248,6 +248,7 @@ a:hover { text-decoration: underline; }
   <button class="tab-btn" role="tab" data-tab="busqueda" aria-selected="false">🔎 Búsqueda</button>
   <button class="tab-btn" role="tab" data-tab="analitica" aria-selected="false">📊 Analítica</button>
   <button class="tab-btn" role="tab" data-tab="contratista" aria-selected="false">👤 Contratista</button>
+  <button class="tab-btn" role="tab" data-tab="estudios" aria-selected="false">📑 Estudios</button>
   <button class="tab-btn" role="tab" data-tab="unspsc" aria-selected="false">📋 UNSPSC</button>
   <button class="tab-btn" role="tab" data-tab="perfil" aria-selected="false">⚙️ Mi Perfil</button>
 </nav>
@@ -405,6 +406,56 @@ a:hover { text-decoration: underline; }
       <button class="btn btn-success" onclick="saveProfile()">💾 Guardar perfil</button>
       <button class="btn btn-secondary" onclick="clearProfile()">🗑️ Limpiar</button>
       <span class="save-indicator" id="saveMsg">✓ Perfil guardado</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== ESTUDIOS DE SECTOR ==================== -->
+<section id="tab-estudios" class="tab-panel" role="tabpanel">
+  <div class="card">
+    <h2 class="section-title"><span class="icon">📑</span> Búsqueda para estudios de sector</h2>
+    <p style="font-size:.82rem;color:var(--fg-secondary);margin-bottom:14px;">Busca procesos similares en SECOP I, II y TVEC para fundamentar estudios previos y análisis del sector. Filtra por objeto, monto y código UNSPSC.</p>
+    <div class="search-row">
+      <input type="text" id="estSearchInput" placeholder="Objeto del contrato (ej: suministro de papelería, consultoría ambiental)" aria-label="Búsqueda estudios">
+      <button class="btn btn-primary" id="estSearchBtn" onclick="searchEstudios()">🔍 Buscar</button>
+    </div>
+    <details style="margin-top:10px;">
+      <summary style="cursor:pointer;font-size:.8125rem;font-weight:500;color:var(--accent);margin-bottom:10px;">Filtros de búsqueda</summary>
+      <div class="filters-grid">
+        <div class="filter-group"><label for="estUnspsc">Código UNSPSC</label><input type="text" id="estUnspsc" placeholder="Ej: 14111500"></div>
+        <div class="filter-group"><label for="estModalidad">Modalidad</label>
+          <select id="estModalidad"><option value="">Todas</option><option>Contratación Directa</option><option>Mínima Cuantía</option><option>Selección Abreviada</option><option>Licitación Pública</option><option>Concurso de Méritos</option></select>
+        </div>
+        <div class="filter-group"><label for="estValMin">Valor mínimo ($)</label><input type="number" id="estValMin" placeholder="0" min="0"></div>
+        <div class="filter-group"><label for="estValMax">Valor máximo ($)</label><input type="number" id="estValMax" placeholder="Sin límite" min="0"></div>
+        <div class="filter-group"><label for="estDept">Departamento</label><input type="text" id="estDept" placeholder="Ej: Boyacá"></div>
+        <div class="filter-group"><label for="estDateFrom">Fecha desde</label><input type="date" id="estDateFrom"></div>
+        <div class="filter-group"><label for="estDateTo">Fecha hasta</label><input type="date" id="estDateTo"></div>
+        <div class="filter-group"><label for="estEstado">Estado</label>
+          <select id="estEstado"><option value="">Todos</option><option>Celebrado</option><option>En ejecución</option><option>Liquidado</option><option>Terminado</option></select>
+        </div>
+      </div>
+    </details>
+  </div>
+  <div class="actions-bar" id="estActionsBar" hidden>
+    <div class="source-toggles">
+      <button class="source-toggle active" data-source="secop2" data-ctx="est" onclick="toggleEstSource(this)">SECOP II</button>
+      <button class="source-toggle active" data-source="procesos" data-ctx="est" onclick="toggleEstSource(this)">Procesos II</button>
+      <button class="source-toggle active" data-source="secop1" data-ctx="est" onclick="toggleEstSource(this)">SECOP I</button>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-secondary" onclick="exportEstCSV()" id="estExportBtn" hidden>⬇ Exportar CSV</button>
+      <span id="estResultCount" style="font-size:.8rem;color:var(--fg-muted);"></span>
+    </div>
+  </div>
+  <div id="estResultsArea">
+    <div class="status-msg"><span class="icon">📑</span>Busca procesos similares para fundamentar tu estudio de sector.<br><span style="font-size:.8rem;">Ejemplo: "suministro de papelería" o "consultoría ambiental"</span></div>
+  </div>
+  <!-- Stats summary for studies -->
+  <div id="estStatsArea" hidden>
+    <div class="card" style="margin-top:12px;">
+      <h3 style="font-size:.9rem;font-weight:600;margin-bottom:10px;">📊 Resumen para estudio de sector</h3>
+      <div class="stats-row" id="estStatsRow"></div>
     </div>
   </div>
 </section>
@@ -1053,6 +1104,234 @@ async function searchContratista() {
 // ================================================================
 // UNSPSC catalog: embedded common codes used in Colombian public procurement
 // Source: Colombia Compra Eficiente classification + SECOP II categories
+// ================================================================
+// ESTUDIOS DE SECTOR
+// ================================================================
+let estResults = [], estFiltered = [], estPage = 0;
+let estActiveSources = new Set(['secop2','procesos','secop1']);
+const EST_PAGE_SIZE = 20;
+
+function toggleEstSource(btn) {
+  const src = btn.dataset.source;
+  if (estActiveSources.has(src)) { estActiveSources.delete(src); btn.classList.remove('active'); }
+  else { estActiveSources.add(src); btn.classList.add('active'); }
+  filterEstResults();
+}
+
+async function searchEstudios() {
+  const q = document.getElementById('estSearchInput').value.trim();
+  if (!q && !document.getElementById('estUnspsc').value.trim()) {
+    document.getElementById('estResultsArea').innerHTML = '<div class="status-msg"><span class="icon">⚠️</span>Ingresa un objeto o código UNSPSC para buscar</div>';
+    return;
+  }
+  const btn = document.getElementById('estSearchBtn');
+  btn.disabled = true; btn.textContent = '⏳ Buscando…';
+  document.getElementById('estResultsArea').innerHTML = '<div class="status-msg"><div class="spinner"></div><br>Consultando fuentes de SECOP…</div>';
+  document.getElementById('estActionsBar').hidden = false;
+  document.getElementById('estStatsArea').hidden = true;
+
+  const valMin = parseFloat(document.getElementById('estValMin').value) || 0;
+  const valMax = parseFloat(document.getElementById('estValMax').value) || 0;
+  const dept = document.getElementById('estDept').value.trim();
+  const unspsc = document.getElementById('estUnspsc').value.trim();
+  const modalidad = document.getElementById('estModalidad').value;
+  const estado = document.getElementById('estEstado').value;
+  const dateFrom = document.getElementById('estDateFrom').value;
+  const dateTo = document.getElementById('estDateTo').value;
+
+  estResults = [];
+  const promises = [];
+
+  // SECOP II Contratos
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.secop2;
+      let where = [];
+      if (q) where.push("upper(" + fm.objeto + ") like upper('%" + encodeClean(q) + "%')");
+      if (valMin) where.push(fm.valor + " >= " + valMin);
+      if (valMax) where.push(fm.valor + " <= " + valMax);
+      if (dept) where.push("upper(" + fm.departamento + ") like upper('%" + encodeClean(dept) + "%')");
+      if (modalidad) where.push("upper(" + fm.modalidad + ") like upper('%" + encodeClean(modalidad) + "%')");
+      if (estado) where.push("upper(" + fm.estado + ") like upper('%" + encodeClean(estado) + "%')");
+      if (dateFrom) where.push(fm.fecha + " >= '" + dateFrom + "'");
+      if (dateTo) where.push(fm.fecha + " <= '" + dateTo + "'");
+      const params = new URLSearchParams({
+        '$where': where.join(' AND '),
+        '$limit': '80',
+        '$order': fm.fecha + ' DESC'
+      });
+      const resp = await fetch(API_BASE + '/' + DATASETS.secop2.id + '.json?' + params);
+      if (resp.ok) {
+        const data = await resp.json();
+        data.forEach(r => estResults.push({ ...r, _source: 'secop2' }));
+      }
+    } catch(e) { console.warn('Est SECOP II error:', e); }
+  })());
+
+  // Procesos II
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.procesos;
+      let where = [];
+      if (q) where.push("upper(" + fm.objeto + ") like upper('%" + encodeClean(q) + "%')");
+      if (valMin) where.push(fm.valor + " >= " + valMin);
+      if (valMax) where.push(fm.valor + " <= " + valMax);
+      if (dept) where.push("upper(" + fm.departamento + ") like upper('%" + encodeClean(dept) + "%')");
+      if (unspsc) where.push(fm.unspsc + " like '" + encodeClean(unspsc) + "%'");
+      if (modalidad) where.push("upper(" + fm.modalidad + ") like upper('%" + encodeClean(modalidad) + "%')");
+      if (estado) where.push("upper(" + fm.estado + ") like upper('%" + encodeClean(estado) + "%')");
+      if (dateFrom) where.push(fm.fecha + " >= '" + dateFrom + "'");
+      if (dateTo) where.push(fm.fecha + " <= '" + dateTo + "'");
+      const params = new URLSearchParams({
+        '$where': where.join(' AND '),
+        '$limit': '80',
+        '$order': fm.fecha + ' DESC'
+      });
+      const resp = await fetch(API_BASE + '/' + DATASETS.procesos.id + '.json?' + params);
+      if (resp.ok) {
+        const data = await resp.json();
+        data.forEach(r => estResults.push({ ...r, _source: 'procesos' }));
+      }
+    } catch(e) { console.warn('Est Procesos error:', e); }
+  })());
+
+  // SECOP I
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.secop1;
+      let where = [];
+      if (q) where.push("upper(" + fm.objeto + ") like upper('%" + encodeClean(q) + "%')");
+      if (valMin) where.push(fm.valor + " >= " + valMin);
+      if (valMax) where.push(fm.valor + " <= " + valMax);
+      if (dept) where.push("upper(" + fm.departamento + ") like upper('%" + encodeClean(dept) + "%')");
+      if (unspsc) where.push(fm.unspsc + " like '" + encodeClean(unspsc) + "%'");
+      if (modalidad) where.push("upper(" + fm.modalidad + ") like upper('%" + encodeClean(modalidad) + "%')");
+      if (estado) where.push("upper(" + fm.estado + ") like upper('%" + encodeClean(estado) + "%')");
+      if (dateFrom) where.push(fm.fecha + " >= '" + dateFrom + "'");
+      if (dateTo) where.push(fm.fecha + " <= '" + dateTo + "'");
+      const params = new URLSearchParams({
+        '$where': where.join(' AND '),
+        '$limit': '80',
+        '$order': fm.fecha + ' DESC'
+      });
+      const resp = await fetch(API_BASE + '/' + DATASETS.secop1.id + '.json?' + params);
+      if (resp.ok) {
+        const data = await resp.json();
+        data.forEach(r => estResults.push({ ...r, _source: 'secop1' }));
+      }
+    } catch(e) { console.warn('Est SECOP I error:', e); }
+  })());
+
+  await Promise.all(promises);
+  btn.disabled = false; btn.textContent = '🔍 Buscar';
+  filterEstResults();
+}
+
+function filterEstResults() {
+  estFiltered = estResults.filter(r => estActiveSources.has(r._source));
+  estPage = 0;
+  renderEstResults();
+  renderEstStats();
+}
+
+function renderEstResults() {
+  const area = document.getElementById('estResultsArea');
+  const countEl = document.getElementById('estResultCount');
+  if (!estFiltered.length) {
+    area.innerHTML = '<div class="status-msg"><span class="icon">📭</span>No se encontraron procesos similares</div>';
+    countEl.textContent = '0 resultados';
+    document.getElementById('estExportBtn').hidden = true;
+    document.getElementById('estStatsArea').hidden = true;
+    return;
+  }
+  countEl.textContent = estFiltered.length + ' proceso' + (estFiltered.length !== 1 ? 's' : '') + ' encontrado' + (estFiltered.length !== 1 ? 's' : '');
+  document.getElementById('estExportBtn').hidden = false;
+
+  const start = estPage * EST_PAGE_SIZE;
+  const page = estFiltered.slice(start, start + EST_PAGE_SIZE);
+  let h = '<div class="table-wrap"><table><thead><tr><th>Fuente</th><th>Entidad</th><th>Objeto</th><th style="text-align:right">Valor</th><th>Fecha</th><th>Estado</th><th>Modalidad</th><th>Ver</th></tr></thead><tbody>';
+  for (const r of page) {
+    const fm = FIELD_MAP[r._source];
+    const entidad = r[fm.entidad] || '—';
+    const objeto = r[fm.objeto] || '—';
+    const valor = r[fm.valor] ? '$' + Number(r[fm.valor]).toLocaleString('es-CO',{maximumFractionDigits:0}) : '—';
+    const fecha = r[fm.fecha] ? r[fm.fecha].substring(0, 10) : '—';
+    const estado = r[fm.estado] || '—';
+    const modalidad = r[fm.modalidad] || '—';
+    const url = r[fm.url];
+    const badge = DATASETS[r._source].badge;
+    h += '<tr>';
+    h += '<td><span class="source-badge ' + badge + '">' + DATASETS[r._source].label + '</span></td>';
+    h += '<td>' + esc(entidad.length > 40 ? entidad.substring(0,40) + '…' : entidad) + '</td>';
+    h += '<td>' + esc(objeto.length > 60 ? objeto.substring(0,60) + '…' : objeto) + '</td>';
+    h += '<td style="text-align:right;white-space:nowrap;">' + valor + '</td>';
+    h += '<td style="white-space:nowrap;">' + fecha + '</td>';
+    h += '<td>' + esc(estado) + '</td>';
+    h += '<td style="font-size:.75rem;">' + esc(modalidad.length > 25 ? modalidad.substring(0,25) + '…' : modalidad) + '</td>';
+    h += '<td>' + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="link-btn">Abrir ↗</a>' : '—') + '</td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+
+  // Pagination
+  const totalPages = Math.ceil(estFiltered.length / EST_PAGE_SIZE);
+  if (totalPages > 1) {
+    h += '<div style="display:flex;justify-content:center;gap:8px;margin-top:12px;">';
+    if (estPage > 0) h += '<button class="btn btn-secondary" onclick="estPage--;renderEstResults();">← Anterior</button>';
+    h += '<span style="align-self:center;font-size:.8rem;color:var(--fg-muted);">Página ' + (estPage+1) + ' de ' + totalPages + '</span>';
+    if (estPage < totalPages - 1) h += '<button class="btn btn-secondary" onclick="estPage++;renderEstResults();">Siguiente →</button>';
+    h += '</div>';
+  }
+  area.innerHTML = h;
+}
+
+function renderEstStats() {
+  if (!estFiltered.length) { document.getElementById('estStatsArea').hidden = true; return; }
+  document.getElementById('estStatsArea').hidden = false;
+  const valores = estFiltered.map(r => {
+    const fm = FIELD_MAP[r._source];
+    return parseFloat(r[fm.valor]) || 0;
+  }).filter(v => v > 0).sort((a,b) => a - b);
+
+  if (!valores.length) { document.getElementById('estStatsArea').hidden = true; return; }
+
+  const sum = valores.reduce((a,b) => a+b, 0);
+  const avg = sum / valores.length;
+  const min = valores[0];
+  const max = valores[valores.length - 1];
+  const median = valores.length % 2 === 0
+    ? (valores[valores.length/2 - 1] + valores[valores.length/2]) / 2
+    : valores[Math.floor(valores.length/2)];
+
+  const fmt = v => '$' + Math.round(v).toLocaleString('es-CO');
+  const row = document.getElementById('estStatsRow');
+  row.innerHTML = ''
+    + '<div class="stat-card"><div class="stat-value">' + estFiltered.length + '</div><div class="stat-label">Procesos encontrados</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + fmt(avg) + '</div><div class="stat-label">Valor promedio</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + fmt(median) + '</div><div class="stat-label">Mediana</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + fmt(min) + '</div><div class="stat-label">Valor mínimo</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + fmt(max) + '</div><div class="stat-label">Valor máximo</div></div>';
+}
+
+function exportEstCSV() {
+  if (!estFiltered.length) return;
+  let csv = 'Fuente,Entidad,Objeto,Valor,Fecha,Estado,Modalidad,URL\n';
+  for (const r of estFiltered) {
+    const fm = FIELD_MAP[r._source];
+    csv += '"' + DATASETS[r._source].label + '","' + (r[fm.entidad]||'').replace(/"/g,'""') + '","' + (r[fm.objeto]||'').replace(/"/g,'""') + '",' + (r[fm.valor]||0) + ',"' + (r[fm.fecha]||'').substring(0,10) + '","' + (r[fm.estado]||'') + '","' + (r[fm.modalidad]||'').replace(/"/g,'""') + '","' + (r[fm.url]||'') + '"\n';
+  }
+  const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'estudio_sector_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('estSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchEstudios(); });
+
+// ================================================================
+// UNSPSC CATALOG
+// ================================================================
 const UNSPSC_CATALOG = [
   // Segment 10 - Live plants, animals
   {c:'10000000',d:'Plantas vivas, animales, organismos y accesorios'},
