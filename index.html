@@ -1,0 +1,2465 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buscador SECOP Colombia</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #F2F4F5;
+  --bg-card: #FFFFFF;
+  --bg-input: #FFFFFF;
+  --bg-hover: #E8ECEE;
+  --bg-badge: #DCE2E6;
+  --fg: #243746;
+  --fg-secondary: #657580;
+  --fg-muted: #8C969E;
+  --border: #DCE2E6;
+  --border-focus: #26745B;
+  --accent: #26745B;
+  --accent-hover: #1E5C48;
+  --accent-bg: #E3F0EB;
+  --accent-glow: rgba(38,116,91,.10);
+  --accent2: #294A5A;
+  --secop1: #B85C1A;
+  --secop2: #26745B;
+  --procesos: #245E8A;
+  --tvec: #6B3FA0;
+  --success: #26745B;
+  --warning: #946200;
+  --error: #B42318;
+  --info: #245E8A;
+  --score-high: #26745B;
+  --score-mid: #946200;
+  --score-low: #B42318;
+  --shadow-sm: 0 1px 2px rgba(23,43,58,.06);
+  --shadow-md: 0 4px 12px rgba(23,43,58,.08);
+  --shadow-glow: none;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --font: 'Inter', system-ui, -apple-system, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --header-bg: #172B3A;
+  --header-accent: #26745B;
+  --sidebar-w: 220px;
+  --sidebar-collapsed-w: 56px;
+  --topbar-h: 52px;
+}
+/* Dark mode deshabilitado — interfaz siempre clara por requerimiento */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.55;
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus:not(:focus-visible) { outline: none; }
+
+/* ===== TOP BAR ===== */
+.top-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--topbar-h);
+  background: var(--header-bg);
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 20px;
+}
+.top-bar .hamburger {
+  background: none; border: none; color: #c0c8d0; cursor: pointer;
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); transition: background .15s;
+}
+.top-bar .hamburger:hover { background: rgba(255,255,255,.1); }
+.top-bar .hamburger svg { width: 22px; height: 22px; }
+.top-bar .brand { display: flex; flex-direction: column; }
+.top-bar .brand-name { font-size: 1rem; font-weight: 700; color: #f0f2f5; letter-spacing: -.01em; line-height: 1.2; }
+.top-bar .brand-sub { font-size: .68rem; color: #7e8a9e; font-weight: 400; }
+.top-bar .spacer { flex: 1; }
+.top-bar .tb-actions { display: flex; align-items: center; gap: 10px; }
+.top-bar .tb-bell { background: none; border: none; color: #9cabb8; cursor: pointer; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background .15s; }
+.top-bar .tb-bell:hover { background: rgba(255,255,255,.1); }
+.top-bar .tb-bell svg { width: 20px; height: 20px; }
+.top-bar .tb-user { display: flex; align-items: center; gap: 8px; color: #c0c8d0; font-size: .82rem; cursor: pointer; }
+.top-bar .tb-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: .75rem; font-weight: 700; }
+
+/* ===== APP LAYOUT ===== */
+.app-layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: var(--topbar-h) 1fr;
+  height: 100vh;
+  transition: grid-template-columns .25s ease;
+}
+.app-layout.sidebar-collapsed { grid-template-columns: var(--sidebar-collapsed-w) 1fr; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  grid-row: 1 / -1;
+  grid-column: 1;
+  background: var(--header-bg);
+  padding-top: var(--topbar-h);
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 90;
+  transition: width .25s ease;
+}
+.sidebar-nav { padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.sidebar-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  color: #9cabb8; font-size: .82rem; font-weight: 500;
+  border: none; background: transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer; white-space: nowrap;
+  transition: background .15s, color .15s;
+  font-family: var(--font);
+  text-align: left; width: 100%;
+}
+.sidebar-item:hover { background: rgba(255,255,255,.06); color: #d0d8e0; }
+.sidebar-item.active {
+  background: var(--header-accent);
+  color: #ffffff;
+  font-weight: 600;
+}
+.sidebar-item svg { width: 18px; height: 18px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.sidebar-item .item-label { overflow: hidden; text-overflow: ellipsis; }
+.sidebar-collapsed .sidebar-item .item-label { display: none; }
+.sidebar-collapsed .sidebar-item { justify-content: center; padding: 10px 0; }
+
+/* ===== MAIN CONTENT ===== */
+.main-area {
+  grid-row: 2;
+  grid-column: 2;
+  overflow-y: auto;
+  padding: 24px 28px 0;
+}
+.main-inner { max-width: 960px; margin: 0 auto; }
+
+/* ===== MOBILE OVERLAY ===== */
+.sidebar-overlay {
+  display: none; position: fixed; inset: 0; z-index: 85;
+  background: rgba(0,0,0,.45);
+}
+.sidebar-overlay.show { display: block; }
+
+/* ===== INICIO / HERO ===== */
+.hero-section {
+  position: relative; text-align: left; padding: 20px 32px 28px;
+  min-height: 200px; overflow: hidden;
+}
+.hero-section::after {
+  content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 55%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 400'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23c8d8e8'/%3E%3Cstop offset='1' stop-color='%23e8eff5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23sky)' width='800' height='400'/%3E%3Cg fill='%23a0b0c0'%3E%3Crect x='200' y='160' width='400' height='200'/%3E%3Crect x='220' y='120' width='360' height='40'/%3E%3Cpolygon points='400,60 220,120 580,120'/%3E%3Crect x='250' y='180' width='30' height='60'/%3E%3Crect x='300' y='180' width='30' height='60'/%3E%3Crect x='350' y='180' width='30' height='60'/%3E%3Crect x='420' y='180' width='30' height='60'/%3E%3Crect x='470' y='180' width='30' height='60'/%3E%3Crect x='520' y='180' width='30' height='60'/%3E%3Crect x='350' y='260' width='100' height='100' rx='50' ry='50'/%3E%3Crect x='375' y='300' width='50' height='60'/%3E%3C/g%3E%3Cg fill='%2390a5b8'%3E%3Crect x='150' y='320' width='60' height='40'/%3E%3Crect x='590' y='320' width='60' height='40'/%3E%3Crect x='100' y='340' width='600' height='20'/%3E%3C/g%3E%3Crect x='0' y='360' width='800' height='40' fill='%23b0c0b0'/%3E%3C/svg%3E") center/cover no-repeat;
+  opacity: .15; mask-image: linear-gradient(to right, transparent 0%, black 30%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%);
+  pointer-events: none; border-radius: var(--radius);
+}
+.hero-flag {
+  position: absolute; top: 12px; right: 20px; z-index: 2;
+  width: 48px; height: 32px; border-radius: 3px; overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.18); border: 1px solid rgba(255,255,255,.3);
+}
+.hero-flag .flag-yellow { height: 50%; background: #FCD116; }
+.hero-flag .flag-blue { height: 25%; background: #003893; }
+.hero-flag .flag-red { height: 25%; background: #CE1126; }
+.hero-breadcrumb { font-size: .78rem; color: var(--fg-muted); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+.hero-breadcrumb svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.hero-section .hero-line1 { font-size: 2.4rem; font-weight: 700; color: var(--fg); line-height: 1.2; }
+.hero-section .hero-line2 { font-size: 2.4rem; font-weight: 700; color: var(--accent); line-height: 1.2; }
+.hero-section .hero-sub {
+  font-size: .92rem; color: var(--fg-secondary); max-width: 560px; margin: 14px 0 0; line-height: 1.55;
+}
+.search-panel {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 28px 32px; max-width: 100%; margin: 0 0 32px; box-shadow: var(--shadow-md);
+}
+.search-panel h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 16px; color: var(--fg); }
+.search-panel .sp-row { display: flex; gap: 16px; align-items: stretch; }
+.search-panel .sp-row .sp-input-wrap {
+  flex: 1; position: relative; display: flex; align-items: center;
+}
+.search-panel .sp-row .sp-input-wrap svg {
+  position: absolute; left: 14px; width: 18px; height: 18px;
+  stroke: var(--fg-muted); fill: none; stroke-width: 1.8; pointer-events: none;
+}
+.search-panel .sp-row .sp-input-wrap input {
+  padding-left: 42px; border-radius: var(--radius);
+  height: 48px; font-size: .9rem;
+}
+.search-panel .sp-row .btn-buscar {
+  font-family: var(--font); font-size: .9rem; font-weight: 600;
+  padding: 0 36px; border: none; border-radius: 99px;
+  background: var(--accent); color: #fff; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  transition: background .15s;
+}
+.search-panel .sp-row .btn-buscar:hover { background: var(--accent-hover); }
+.search-panel .sp-row .btn-buscar svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2.2; }
+.quick-filters { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.quick-filter {
+  font-family: var(--font); font-size: .8rem; font-weight: 500; padding: 8px 18px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg);
+  color: var(--fg-secondary); cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; gap: 7px;
+}
+.quick-filter svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+.quick-filter:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+.tools-section { margin-bottom: 36px; }
+.tools-section h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 18px; text-align: left; color: var(--fg); }
+.tool-cards-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+}
+.tool-card {
+  background: var(--bg-card); border: 1.5px solid rgba(38,116,91,.22); border-radius: var(--radius);
+  padding: 22px 20px; cursor: pointer; transition: border-color .15s, box-shadow .15s;
+  display: flex; align-items: center; gap: 18px;
+  text-decoration: none; color: inherit;
+}
+.tool-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); text-decoration: none; }
+.tool-card .tc-icon {
+  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-bg); color: var(--accent);
+}
+.tool-card .tc-icon svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.tool-card .tc-body { flex: 1; min-width: 0; }
+.tool-card .tc-title { font-size: .92rem; font-weight: 600; margin-bottom: 4px; }
+.tool-card .tc-desc { font-size: .8rem; color: var(--fg-secondary); line-height: 1.45; }
+.tool-card .tc-chevron { color: var(--fg-muted); flex-shrink: 0; margin-left: auto; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+.tool-card .tc-chevron svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+/* ===== TAB PANELS (preserved) ===== */
+.tab-panel { display: none; max-width: 960px; margin: 0 auto; }
+.tab-panel.active { display: block; }
+
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm); margin-bottom: 16px; transition: box-shadow .15s; }
+.card:hover { box-shadow: var(--shadow-md); }
+.card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.card h2 .badge-count { font-size: .75rem; font-weight: 600; background: var(--accent-bg); color: var(--accent); padding: 2px 8px; border-radius: 99px; }
+
+.search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-row input[type="text"] { flex: 1; }
+input, select { font-family: var(--font); font-size: .875rem; padding: 10px 12px; background: var(--bg-input); color: var(--fg); border: 1px solid var(--border); border-radius: var(--radius-sm); transition: border-color .15s; width: 100%; }
+input:focus, select:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 3px rgba(42,120,214,.15); }
+input::placeholder { color: var(--fg-muted); }
+
+.filters-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.filter-group label { display: block; font-size: .75rem; font-weight: 500; color: var(--fg-secondary); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+
+.btn { font-family: var(--font); font-size: .875rem; font-weight: 600; padding: 10px 20px; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: all .15s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-secondary { background: var(--bg-hover); color: var(--fg-secondary); border: 1px solid var(--border); }
+.btn-secondary:hover { color: var(--fg); background: var(--bg-badge); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { opacity: .9; }
+
+.actions-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.source-toggles { display: flex; gap: 6px; flex-wrap: wrap; }
+.source-toggle { font-family: var(--font); font-size: .75rem; font-weight: 600; padding: 5px 10px; border-radius: 99px; border: 2px solid; cursor: pointer; background: transparent; transition: all .15s; }
+.source-toggle.active { color: #fff !important; }
+.source-toggle[data-source="secop1"] { border-color: var(--secop1); color: var(--secop1); }
+.source-toggle[data-source="secop1"].active { background: var(--secop1); }
+.source-toggle[data-source="secop2"] { border-color: var(--secop2); color: var(--secop2); }
+.source-toggle[data-source="secop2"].active { background: var(--secop2); }
+.source-toggle[data-source="procesos"] { border-color: var(--procesos); color: var(--procesos); }
+.source-toggle[data-source="procesos"].active { background: var(--procesos); }
+.source-toggle[data-source="tvec"] { border-color: var(--tvec); color: var(--tvec); }
+.source-toggle[data-source="tvec"].active { background: var(--tvec); }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+table { width: 100%; border-collapse: collapse; font-size: .8125rem; min-width: 700px; }
+thead { background: var(--bg-hover); position: sticky; top: 0; z-index: 1; }
+th { padding: 10px 12px; text-align: left; font-weight: 600; font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; color: var(--fg-secondary); border-bottom: 2px solid var(--border); white-space: nowrap; }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; max-width: 280px; }
+tr:last-child td { border-bottom: none; }
+tr:hover { background: var(--bg-hover); }
+td.object-col { word-break: break-word; min-width: 180px; }
+td.val-col { font-family: var(--mono); font-size: .8rem; white-space: nowrap; text-align: right; }
+.src-badge { font-size: .65rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; color: #fff; white-space: nowrap; }
+.src-badge.secop1 { background: var(--secop1); }
+.src-badge.secop2 { background: var(--secop2); }
+.src-badge.procesos { background: var(--procesos); }
+.src-badge.tvec { background: var(--tvec); }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.pagination button { font-family: var(--font); font-size: .8125rem; padding: 6px 14px; border: 1px solid var(--border); background: var(--bg-card); color: var(--fg-secondary); border-radius: var(--radius-sm); cursor: pointer; }
+.pagination button:hover { background: var(--bg-hover); }
+.pagination button:disabled { opacity: .4; cursor: not-allowed; }
+.pagination .page-info { font-size: .8125rem; color: var(--fg-muted); }
+
+.status-msg { text-align: center; padding: 40px 20px; color: var(--fg-muted); font-size: .9rem; }
+.status-msg .icon { font-size: 2rem; display: block; margin-bottom: 8px; }
+.spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; text-align: center; position: relative; }
+.stat-card .value, .stat-card .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--fg); font-family: var(--mono); }
+.stat-card .label, .stat-card .stat-label { font-size: .72rem; color: var(--fg-muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .05em; font-weight: 500; }
+
+.charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.chart-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+.chart-card h3 { font-size: .875rem; font-weight: 600; margin-bottom: 12px; }
+.chart-card canvas { max-height: 280px; }
+
+.profile-header { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 16px; }
+.profile-avatar { width: 56px; height: 56px; background: var(--accent-bg); color: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 700; flex-shrink: 0; }
+.profile-info h2 { margin-bottom: 2px; }
+.profile-info p { color: var(--fg-secondary); font-size: .875rem; }
+.profile-stats { display: flex; gap: 20px; flex-wrap: wrap; }
+.profile-stat .num { font-size: 1.25rem; font-weight: 700; font-family: var(--mono); }
+.profile-stat .lbl { font-size: .7rem; color: var(--fg-muted); text-transform: uppercase; letter-spacing: .03em; }
+
+.score-badge { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: .8rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; }
+.score-high { background: color-mix(in srgb, var(--score-high) 18%, transparent); color: var(--score-high); }
+.score-mid { background: color-mix(in srgb, var(--score-mid) 18%, transparent); color: var(--score-mid); }
+.score-low { background: color-mix(in srgb, var(--score-low) 18%, transparent); color: var(--score-low); }
+
+.chip-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; padding: 4px 10px; background: var(--accent-bg); color: var(--accent); border-radius: 99px; font-weight: 500; }
+.chip .remove { cursor: pointer; font-size: 1rem; line-height: 1; opacity: .7; background: none; border: none; color: inherit; padding: 0 2px; }
+.chip .remove:hover { opacity: 1; }
+
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.form-field { display: flex; flex-direction: column; gap: 4px; }
+.form-field label { font-size: .75rem; font-weight: 600; color: var(--fg-secondary); text-transform: uppercase; letter-spacing: .04em; }
+.form-field .hint { font-size: .7rem; color: var(--fg-muted); }
+.add-row { display: flex; gap: 6px; }
+.add-row input { flex: 1; }
+.add-row button { flex-shrink: 0; }
+
+.opp-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: var(--shadow-sm); transition: border-color .15s; }
+.opp-card:hover { border-color: var(--accent); }
+.opp-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+.opp-title { font-weight: 600; font-size: .9rem; flex: 1; min-width: 200px; }
+.opp-meta { display: flex; flex-wrap: wrap; gap: 8px; font-size: .78rem; color: var(--fg-secondary); margin-bottom: 8px; }
+.opp-meta span { display: inline-flex; align-items: center; gap: 3px; }
+.opp-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+.opp-match-details { font-size: .72rem; color: var(--fg-muted); display: flex; gap: 10px; flex-wrap: wrap; }
+.match-item { display: inline-flex; align-items: center; gap: 3px; }
+.match-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+.match-dot.yes { background: var(--score-high); }
+.match-dot.partial { background: var(--score-mid); }
+.match-dot.no { background: var(--score-low); }
+
+.save-indicator { font-size: .8rem; padding: 8px 14px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--success) 12%, transparent); color: var(--success); font-weight: 500; display: none; align-items: center; gap: 6px; }
+.save-indicator.show { display: inline-flex; }
+
+.modal-search-row input { flex: 1; }
+.unspsc-results { display: flex; flex-direction: column; gap: 6px; }
+.unspsc-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; transition: all .15s; }
+.unspsc-item:hover { border-color: var(--accent); background: var(--accent-bg); }
+.unspsc-item.added { border-color: var(--success); background: color-mix(in srgb, var(--success) 8%, transparent); cursor: default; }
+.unspsc-code { font-family: var(--mono); font-size: .82rem; font-weight: 600; color: var(--accent); white-space: nowrap; min-width: 72px; }
+.unspsc-item.added .unspsc-code { color: var(--success); }
+.unspsc-desc { font-size: .82rem; color: var(--fg-secondary); line-height: 1.4; }
+.unspsc-level { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; padding: 2px 6px; border-radius: 3px; background: var(--bg-badge); color: var(--fg-muted); white-space: nowrap; margin-top: 1px; }
+.unspsc-added-icon { color: var(--success); font-weight: 700; font-size: .85rem; margin-left: auto; white-space: nowrap; }
+
+/* ===== FOOTER ===== */
+.app-footer {
+  background: var(--header-bg);
+  color: #9cabb8;
+  padding: 0;
+  margin-top: 40px;
+}
+.footer-columns {
+  max-width: 960px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  gap: 32px; padding: 36px 24px 28px;
+  align-items: start;
+}
+.footer-col h4 { font-size: .78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: #c0c8d0; margin-bottom: 12px; }
+.footer-col p, .footer-col a { font-size: .8rem; color: #8294a4; line-height: 1.6; }
+.footer-col a:hover { color: #d0d8e0; }
+.footer-col .contact-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: .8rem; }
+.footer-col .contact-item svg { width: 14px; height: 14px; stroke: var(--header-accent); fill: none; flex-shrink: 0; }
+.footer-brand-center { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.footer-brand-center img { height: 56px; opacity: 1; mix-blend-mode: screen; }
+.footer-brand-center .brand-name { font-size: .82rem; font-weight: 600; color: #c0c8d0; }
+.footer-brand-center .brand-slogan { font-size: .72rem; color: #6a7d8d; }
+.footer-sources a { display: block; font-size: .8rem; margin-bottom: 5px; color: #8294a4; }
+.footer-sources a:hover { color: var(--header-accent); }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,.08);
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 24px; max-width: 960px; margin: 0 auto;
+  font-size: .72rem; color: #5e6e7e;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .app-layout { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed; left: -260px; top: 0; bottom: 0; width: 260px;
+    padding-top: var(--topbar-h); z-index: 95;
+    transition: left .25s ease;
+  }
+  .sidebar.mobile-open { left: 0; }
+  .main-area { grid-column: 1; padding: 16px 16px 0; }
+  .hero-section { padding: 16px 16px 20px; min-height: auto; }
+  .hero-section::after { display: none; }
+  .hero-section .hero-line1, .hero-section .hero-line2 { font-size: 1.5rem; }
+  .hero-section .hero-sub { font-size: .84rem; }
+  .tool-cards-grid { grid-template-columns: 1fr; }
+  .search-panel { padding: 16px; }
+  .search-panel .sp-row { flex-direction: column; gap: 12px; }
+  .search-panel .sp-row .btn-buscar { border-radius: 99px; justify-content: center; height: 44px; }
+  .quick-filters { gap: 8px; }
+  .search-row { flex-direction: column; }
+  .filters-grid { grid-template-columns: 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .actions-bar { flex-direction: column; align-items: stretch; }
+  .charts-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .opp-header { flex-direction: column; }
+  .footer-columns { grid-template-columns: 1fr; gap: 24px; text-align: center; }
+  .footer-col .contact-item { justify-content: center; }
+  .top-bar .tb-user span { display: none; }
+  .top-bar .brand-sub { display: none; }
+}
+@media (min-width: 769px) {
+  .sidebar-collapsed .sidebar { width: var(--sidebar-collapsed-w); }
+}
+</style>
+</head>
+<body>
+
+<div class="app-layout" id="appLayout">
+
+  <!-- TOP BAR -->
+  <header class="top-bar">
+    <button class="hamburger" onclick="toggleSidebar()" aria-label="Menú">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="brand">
+      <span class="brand-name">SECOP Colombia</span>
+      <span class="brand-sub">Inteligencia en contratación pública</span>
+    </div>
+    <div class="spacer"></div>
+    <div class="tb-actions">
+      <button class="tb-bell" aria-label="Notificaciones">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <div class="tb-user" id="tbUser" onclick="switchTab('perfil')" style="cursor:pointer;" title="Mi Perfil">
+        <div class="tb-avatar" id="tbAvatar">U</div>
+        <span id="tbUserName">Usuario</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-nav">
+      <button class="sidebar-item active" data-tab="inicio">
+        <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span class="item-label">Inicio</span>
+      </button>
+      <button class="sidebar-item" data-tab="oportunidades">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/><path d="M8 11h6"/><path d="M11 8v6"/></svg>
+        <span class="item-label">Oportunidades</span>
+      </button>
+      <button class="sidebar-item" data-tab="busqueda">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span class="item-label">Búsqueda</span>
+      </button>
+      <button class="sidebar-item" data-tab="analitica">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="item-label">Analítica</span>
+      </button>
+      <button class="sidebar-item" data-tab="contratista">
+        <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span class="item-label">Contratista</span>
+      </button>
+      <button class="sidebar-item" data-tab="estudios">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span class="item-label">Estudios</span>
+      </button>
+      <button class="sidebar-item" data-tab="vigilancia">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="item-label">Vigilancia</span>
+      </button>
+      <button class="sidebar-item" data-tab="unspsc">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span class="item-label">UNSPSC</span>
+      </button>
+      <button class="sidebar-item" data-tab="perfil">
+        <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span class="item-label">Mi Perfil</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- MOBILE OVERLAY -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeMobileSidebar()"></div>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-area">
+    <div class="main-inner">
+
+      <!-- TAB: INICIO -->
+      <div class="tab-panel active" id="tab-inicio">
+        <div class="hero-section">
+          <div class="hero-flag"><div class="flag-yellow"></div><div class="flag-blue"></div><div class="flag-red"></div></div>
+          <div class="hero-breadcrumb">
+            <svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            Inicio
+          </div>
+          <div class="hero-line1">Encuentra información.</div>
+          <div class="hero-line2">Analiza oportunidades.</div>
+          <p class="hero-sub">Consulta procesos, contratistas y datos de la contratación pública colombiana desde un mismo lugar.</p>
+        </div>
+        <div class="search-panel">
+          <h3>¿Qué información necesitas?</h3>
+          <div class="sp-row">
+            <div class="sp-input-wrap">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" id="inicioSearchInput" placeholder="Buscar proceso, entidad o contratista...">
+            </div>
+            <button class="btn-buscar" onclick="inicioSearch()">Buscar <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
+          <div class="quick-filters">
+            <button class="quick-filter" onclick="inicioQuickFilter('procesos')"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Procesos</button>
+            <button class="quick-filter" onclick="inicioQuickFilter('contratistas')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Contratistas</button>
+            <button class="quick-filter" onclick="inicioQuickFilter('entidades')"><svg viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 21V10M10 21V10M14 21V10M18 21V10M12 3L2 7h20L12 3z"/></svg> Entidades</button>
+            <button class="quick-filter" onclick="inicioQuickFilter('unspsc')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> UNSPSC</button>
+          </div>
+        </div>
+        <div class="tools-section">
+          <h3>Herramientas de consulta</h3>
+          <div class="tool-cards-grid">
+            <div class="tool-card" onclick="switchTab('oportunidades')">
+              <div class="tc-icon">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/><path d="M8 11h6"/><path d="M11 8v6"/></svg>
+              </div>
+              <div class="tc-body">
+                <div class="tc-title">Oportunidades</div>
+                <div class="tc-desc">Identifica procesos de interés.</div>
+              </div>
+              <span class="tc-chevron"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+            </div>
+            <div class="tool-card" onclick="switchTab('analitica')">
+              <div class="tc-icon">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              </div>
+              <div class="tc-body">
+                <div class="tc-title">Analítica</div>
+                <div class="tc-desc">Explora datos y tendencias.</div>
+              </div>
+              <span class="tc-chevron"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+            </div>
+            <div class="tool-card" onclick="switchTab('contratista')">
+              <div class="tc-icon">
+                <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="tc-body">
+                <div class="tc-title">Contratistas</div>
+                <div class="tc-desc">Consulta perfiles y registros.</div>
+              </div>
+              <span class="tc-chevron"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+            </div>
+            <div class="tool-card" onclick="switchTab('vigilancia')">
+              <div class="tc-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div class="tc-body">
+                <div class="tc-title">Vigilancia</div>
+                <div class="tc-desc">Realiza seguimiento de interés.</div>
+              </div>
+              <span class="tc-chevron"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: OPORTUNIDADES -->
+      <div class="tab-panel" id="tab-oportunidades">
+        <div class="card">
+          <h2>Oportunidades <span id="oppProfileStatus" class="badge-count"></span></h2>
+          <p style="font-size:.82rem;color:var(--fg-secondary);margin-bottom:14px;">Configura tu perfil para encontrar oportunidades relevantes. Se buscan procesos abiertos que coincidan con tus códigos UNSPSC, departamento y palabras clave.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="searchOportunidades()">Buscar oportunidades</button>
+          </div>
+          <div style="margin-top:12px;">
+            <div class="source-toggles">
+              <button class="source-toggle active" data-source="procesos" onclick="toggleOppSource(this)" style="border-color:var(--procesos);color:var(--procesos);">Procesos II</button>
+              <button class="source-toggle active" data-source="secop1" onclick="toggleOppSource(this)" style="border-color:var(--secop1);color:var(--secop1);">SECOP I</button>
+              <button class="source-toggle active" data-source="tvec" onclick="toggleOppSource(this)" style="border-color:var(--tvec);color:var(--tvec);">TVEC</button>
+            </div>
+          </div>
+        </div>
+        <div id="oppArea"><div class="status-msg">Configura tu perfil y busca oportunidades.</div></div>
+      </div>
+
+      <!-- TAB: BÚSQUEDA -->
+      <div class="tab-panel" id="tab-busqueda">
+        <div class="card">
+          <h2>Búsqueda general</h2>
+          <div class="search-row">
+            <input type="text" id="searchInput" placeholder="Buscar por objeto contractual, entidad...">
+            <button class="btn btn-primary" id="searchBtn" onclick="doSearch()">Buscar</button>
+          </div>
+          <details>
+            <summary style="font-size:.82rem;color:var(--fg-secondary);cursor:pointer;margin-bottom:10px;">Filtros avanzados</summary>
+            <div class="filters-grid">
+              <div class="filter-group"><label>Valor mínimo</label><input type="number" id="valMin" placeholder="0"></div>
+              <div class="filter-group"><label>Valor máximo</label><input type="number" id="valMax" placeholder="Sin límite"></div>
+              <div class="filter-group"><label>Departamento</label><input type="text" id="deptFilter" placeholder="Ej: Bogotá"></div>
+              <div class="filter-group"><label>Código UNSPSC</label><input type="text" id="unspscFilter" placeholder="Ej: 43230000"></div>
+              <div class="filter-group"><label>Modalidad</label><input type="text" id="modalFilter" placeholder="Ej: Licitación"></div>
+              <div class="filter-group"><label>Estado</label><input type="text" id="statusFilter" placeholder="Ej: Celebrado"></div>
+              <div class="filter-group"><label>Fecha desde</label><input type="date" id="dateFrom"></div>
+              <div class="filter-group"><label>Fecha hasta</label><input type="date" id="dateTo"></div>
+            </div>
+          </details>
+          <div class="actions-bar">
+            <div class="source-toggles">
+              <button class="source-toggle active" data-source="secop2" onclick="toggleSource(this)">SECOP II</button>
+              <button class="source-toggle active" data-source="procesos" onclick="toggleSource(this)">Procesos</button>
+              <button class="source-toggle active" data-source="secop1" onclick="toggleSource(this)">SECOP I</button>
+              <button class="source-toggle active" data-source="tvec" onclick="toggleSource(this)">TVEC</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span id="resultCount" style="font-size:.82rem;color:var(--fg-muted);"></span>
+              <button class="btn btn-secondary" onclick="exportCSV()" style="font-size:.78rem;" hidden id="exportBtn">Exportar CSV</button>
+            </div>
+          </div>
+        </div>
+        <div id="resultsArea"><div class="status-msg">Ingresa un término para buscar en las fuentes de SECOP</div></div>
+      </div>
+
+      <!-- TAB: ANALÍTICA -->
+      <div class="tab-panel" id="tab-analitica">
+        <div id="analyticsEmpty" class="status-msg">Realiza una búsqueda primero para ver analítica</div>
+        <div id="analyticsContent" hidden>
+          <div class="stats-row" id="statsRow"></div>
+          <div class="charts-grid" id="chartsGrid"></div>
+        </div>
+      </div>
+
+      <!-- TAB: CONTRATISTA -->
+      <div class="tab-panel" id="tab-contratista">
+        <div class="card">
+          <h2>Consulta de contratista</h2>
+          <div class="search-row">
+            <input type="text" id="nitInput" placeholder="NIT o nombre del contratista...">
+            <button class="btn btn-primary" onclick="searchContratista()">Consultar</button>
+          </div>
+          <p style="font-size:.78rem;color:var(--fg-muted);margin-top:4px;">Busca por NIT (sin dígito de verificación) o nombre del proveedor</p>
+        </div>
+        <div id="contratistaArea"></div>
+      </div>
+
+      <!-- TAB: PERFIL -->
+      <div class="tab-panel" id="tab-perfil">
+        <div class="card">
+          <div class="profile-header">
+            <div class="profile-avatar" id="profileAvatar">?</div>
+            <div class="profile-info">
+              <h2 id="profileName">Mi Perfil</h2>
+              <p>Configura tu perfil para recibir oportunidades relevantes</p>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Nombre o empresa</label>
+              <input type="text" id="profName" placeholder="Tu nombre o razón social" onchange="saveProfile()">
+            </div>
+            <div class="form-field">
+              <label>NIT / Identificación</label>
+              <input type="text" id="profNit" placeholder="NIT sin dígito de verificación" onchange="saveProfile()">
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Códigos UNSPSC de interés</h2>
+          <p style="font-size:.82rem;color:var(--fg-secondary);margin-bottom:10px;">Agrega los códigos de productos o servicios que ofreces</p>
+          <div class="add-row">
+            <input type="text" id="unspscInput" placeholder="Código UNSPSC (ej: 43230000)">
+            <button class="btn btn-secondary" onclick="addUnspsc()">Agregar</button>
+          </div>
+          <div id="unspscChips" class="chip-list"></div>
+        </div>
+        <div class="card">
+          <h2>Departamentos de interés</h2>
+          <div class="add-row">
+            <input type="text" id="deptInput" placeholder="Departamento" list="deptList">
+            <button class="btn btn-secondary" onclick="addDept()">Agregar</button>
+          </div>
+          <div id="deptChips" class="chip-list"></div>
+          <datalist id="deptList">
+            <option value="Amazonas"><option value="Antioquia"><option value="Arauca"><option value="Atlántico"><option value="Bogotá D.C."><option value="Bolívar"><option value="Boyacá"><option value="Caldas"><option value="Caquetá"><option value="Casanare"><option value="Cauca"><option value="Cesar"><option value="Chocó"><option value="Córdoba"><option value="Cundinamarca"><option value="Guainía"><option value="Guaviare"><option value="Huila"><option value="La Guajira"><option value="Magdalena"><option value="Meta"><option value="Nariño"><option value="Norte de Santander"><option value="Putumayo"><option value="Quindío"><option value="Risaralda"><option value="San Andrés"><option value="Santander"><option value="Sucre"><option value="Tolima"><option value="Valle del Cauca"><option value="Vaupés"><option value="Vichada">
+          </datalist>
+        </div>
+        <div class="card">
+          <h2>Palabras clave</h2>
+          <p style="font-size:.82rem;color:var(--fg-secondary);margin-bottom:10px;">Términos que describen tu actividad</p>
+          <div class="add-row">
+            <input type="text" id="kwInput" placeholder="Ej: software, consultoría, construcción">
+            <button class="btn btn-secondary" onclick="addKeyword()">Agregar</button>
+          </div>
+          <div id="kwChips" class="chip-list"></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
+          <button class="btn btn-primary" onclick="saveProfile()">Guardar perfil</button>
+          <button class="btn btn-secondary" onclick="clearProfile()">Limpiar perfil</button>
+          <div class="save-indicator" id="saveIndicator">Perfil guardado</div>
+        </div>
+      </div>
+
+      <!-- TAB: ESTUDIOS -->
+      <div class="tab-panel" id="tab-estudios">
+        <div class="card">
+          <h2>Estudios de sector</h2>
+          <p style="font-size:.82rem;color:var(--fg-secondary);margin-bottom:12px;">Consulta procesos similares para fundamentar estudios previos y análisis del sector.</p>
+          <div class="search-row">
+            <input type="text" id="estSearchInput" placeholder="Objeto contractual a investigar...">
+            <button class="btn btn-primary" id="estSearchBtn" onclick="searchEstudios()">Buscar</button>
+          </div>
+          <details>
+            <summary style="font-size:.82rem;color:var(--fg-secondary);cursor:pointer;margin-bottom:10px;">Filtros avanzados</summary>
+            <div class="filters-grid">
+              <div class="filter-group"><label>Valor mínimo</label><input type="number" id="estValMin" placeholder="0"></div>
+              <div class="filter-group"><label>Valor máximo</label><input type="number" id="estValMax" placeholder="Sin límite"></div>
+              <div class="filter-group"><label>Departamento</label><input type="text" id="estDept" placeholder="Ej: Bogotá"></div>
+              <div class="filter-group"><label>Código UNSPSC</label><input type="text" id="estUnspsc" placeholder="Ej: 81111500"></div>
+              <div class="filter-group"><label>Modalidad</label><input type="text" id="estModalidad" placeholder="Ej: Mínima cuantía"></div>
+              <div class="filter-group"><label>Estado</label><input type="text" id="estEstado" placeholder="Ej: Celebrado"></div>
+              <div class="filter-group"><label>Fecha desde</label><input type="date" id="estDateFrom"></div>
+              <div class="filter-group"><label>Fecha hasta</label><input type="date" id="estDateTo"></div>
+            </div>
+          </details>
+          <div class="actions-bar" id="estActionsBar" hidden>
+            <div class="source-toggles">
+              <button class="source-toggle active" data-source="secop2" onclick="toggleEstSource(this)">SECOP II</button>
+              <button class="source-toggle active" data-source="procesos" onclick="toggleEstSource(this)">Procesos</button>
+              <button class="source-toggle active" data-source="secop1" onclick="toggleEstSource(this)">SECOP I</button>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span id="estResultCount" style="font-size:.82rem;color:var(--fg-muted);"></span>
+              <button class="btn btn-secondary" onclick="exportEstCSV()" style="font-size:.78rem;" hidden id="estExportBtn">Exportar CSV</button>
+            </div>
+          </div>
+        </div>
+        <div id="estResultsArea"><div class="status-msg">Ingresa un objeto contractual para buscar procesos similares</div></div>
+        <div id="estStatsArea" hidden>
+          <div class="card"><h2>Estadísticas del estudio</h2><div class="stats-row" id="estStatsRow"></div></div>
+        </div>
+      </div>
+
+      <!-- TAB: VIGILANCIA -->
+      <div class="tab-panel" id="tab-vigilancia">
+        <div class="card">
+          <h2>Vigilancia contractual</h2>
+          <p style="font-size:.82rem;color:var(--fg-secondary);margin-bottom:12px;">Monitorea entidades o contratistas y detecta posibles alertas de riesgo.</p>
+          <div class="search-row">
+            <input type="text" id="vigSearchInput" placeholder="Nombre de entidad o contratista a vigilar...">
+            <button class="btn btn-primary" id="vigSearchBtn" onclick="searchVigilancia()">Analizar</button>
+          </div>
+          <div class="filters-grid" style="margin-top:8px;">
+            <div class="filter-group"><label>Valor mínimo</label><input type="number" id="vigValMin" placeholder="0"></div>
+            <div class="filter-group"><label>Valor máximo</label><input type="number" id="vigValMax" placeholder="Sin límite"></div>
+            <div class="filter-group"><label>Fecha desde</label><input type="date" id="vigDateFrom"></div>
+            <div class="filter-group"><label>Fecha hasta</label><input type="date" id="vigDateTo"></div>
+          </div>
+        </div>
+        <div id="vigLoadingArea"></div>
+        <div id="vigReportArea" hidden>
+          <div class="card"><h2>Resumen general</h2><div id="vigSummary"></div></div>
+          <div class="card"><h2>Alertas detectadas</h2><div id="vigAlertsList"></div></div>
+          <div class="card"><h2>Top proveedores</h2><div id="vigProveedoresTable"></div></div>
+          <div class="card"><h2>Contratos encontrados <span id="vigContractCount" class="badge-count"></span></h2><div class="table-wrap" id="vigContractsTable"></div></div>
+        </div>
+      </div>
+
+      <!-- TAB: UNSPSC -->
+      <div class="tab-panel" id="tab-unspsc">
+        <div class="card">
+          <h2>Catálogo UNSPSC</h2>
+          <p style="font-size:.82rem;color:var(--fg-secondary);margin-bottom:12px;">Busca códigos UNSPSC y agrégalos a tu perfil</p>
+          <div class="search-row">
+            <input type="text" id="unspscSearchInput" placeholder="Buscar producto, servicio o código numérico...">
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span id="unspscSearchCount" style="font-size:.78rem;color:var(--fg-muted);"></span>
+          </div>
+          <div id="unspscSearchResults"><div class="status-msg" style="padding:20px;">Escribe un producto, servicio o código numérico para buscar</div></div>
+        </div>
+      </div>
+
+    </div><!-- /main-inner -->
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+      <div class="footer-columns">
+        <div class="footer-col">
+          <h4>Contacto</h4>
+          <p style="margin-bottom:10px;">¿Necesitas ayuda o tienes alguna consulta? Estamos para apoyarte.</p>
+          <div class="contact-item">
+            <svg viewBox="0 0 24 24" stroke-width="1.5"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,4 12,13 2,4"/></svg>
+            <a href="mailto:gdzsoporte@gmail.com" style="color:#8294a4;text-decoration:none;">gdzsoporte@gmail.com</a>
+          </div>
+          <div class="contact-item">
+            <svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            <a href="https://wa.me/573193592140" target="_blank" rel="noopener" style="color:#8294a4;text-decoration:none;">WhatsApp: 319 359 2140</a>
+          </div>
+          <div class="contact-item" style="margin-top:8px;">
+            <a href="https://www.instagram.com/gdz.soluciones" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:8px;color:#8294a4;text-decoration:none;">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="var(--header-accent)" fill="none" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.2" fill="var(--header-accent)" stroke="none"/></svg>
+              <span>@gdz.soluciones</span>
+            </a>
+          </div>
+        </div>
+        <div class="footer-col footer-brand-center">
+          <img src="data:image/webp;base64,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" alt="GDZ Soluciones Integrales" style="mix-blend-mode:screen;">
+          <span class="brand-name">GDZ Soluciones Integrales</span>
+          <span class="brand-slogan">Tecnología y datos para una mejor gestión pública.</span>
+        </div>
+        <div class="footer-col footer-sources">
+          <h4>Fuentes de información</h4>
+          <a href="https://www.colombiacompra.gov.co/secop-ii" target="_blank" rel="noopener">✓ SECOP II</a>
+          <a href="https://www.colombiacompra.gov.co/secop/secop-i" target="_blank" rel="noopener">✓ SECOP I</a>
+          <a href="https://www.colombiacompra.gov.co/tienda-virtual-del-estado-colombiano" target="_blank" rel="noopener">✓ Tienda Virtual del Estado</a>
+          <a href="https://www.datos.gov.co/" target="_blank" rel="noopener">✓ Datos Abiertos Colombia</a>
+          <a href="https://rup.colombiacompra.gov.co/" target="_blank" rel="noopener">✓ RUP</a>
+          <a href="#" onclick="return false">✓ Otros sistemas de información</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>GDZ Soluciones Integrales &nbsp;|&nbsp; Buscador SECOP Colombia</span>
+        <span>&copy; <script>document.write(new Date().getFullYear())</script>. Todos los derechos reservados.</span>
+      </div>
+    </footer>
+
+  </main>
+
+</div>
+
+<script>
+// ================================================================
+// SIDEBAR & NAV
+// ================================================================
+function toggleSidebar() {
+  const layout = document.getElementById('appLayout');
+  const sidebar = document.getElementById('sidebar');
+  if (window.innerWidth <= 768) {
+    sidebar.classList.toggle('mobile-open');
+    document.getElementById('sidebarOverlay').classList.toggle('show');
+  } else {
+    layout.classList.toggle('sidebar-collapsed');
+  }
+}
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.sidebar-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const btn = document.querySelector('.sidebar-item[data-tab="'+tab+'"]');
+  if (btn) btn.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  closeMobileSidebar();
+}
+document.querySelectorAll('.sidebar-item').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+// Inicio search
+function inicioSearch() {
+  const q = document.getElementById('inicioSearchInput').value.trim();
+  if (!q) return;
+  switchTab('busqueda');
+  document.getElementById('searchInput').value = q;
+  doSearch();
+}
+function inicioQuickFilter(type) {
+  if (type === 'unspsc') { switchTab('unspsc'); return; }
+  if (type === 'contratistas') { switchTab('contratista'); return; }
+  switchTab('busqueda');
+  document.getElementById('searchInput').focus();
+}
+document.getElementById('inicioSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') inicioSearch(); });
+
+// ================================================================
+// CONSTANTS & STATE
+// ================================================================
+const API_BASES = [
+  'https://www.datos.gov.co/resource',
+  'https://datos.gov.co/resource'
+];
+let currentApiBase = 0;
+const API_BASE = API_BASES[0];
+const DATASETS = {
+  secop2:   { id: 'jbjy-vk9h', label: 'SECOP II',   badge: 'secop2' },
+  procesos: { id: 'p6dx-8zbt', label: 'Procesos II', badge: 'procesos' },
+  secop1:   { id: 'f789-7hwg', label: 'SECOP I',     badge: 'secop1' },
+  tvec:     { id: 'rgxm-mmea', label: 'TVEC',         badge: 'tvec' }
+};
+
+// ---- FETCH CON FALLBACK Y CACHÉ ----
+const FETCH_TIMEOUT_MS = 10000;
+// Carrera entre el fetch y un timeout: si la fuente no responde a tiempo,
+// se resuelve en null y la UI nunca se queda colgada (clave en redes móviles).
+function fetchConTimeout(finalUrl, ms) {
+  return Promise.race([
+    fetch(finalUrl).then(r => r).catch(() => null),
+    new Promise(resolve => setTimeout(() => resolve(null), ms))
+  ]);
+}
+
+async function fetchConFallback(url) {
+  for (let i = 0; i < API_BASES.length; i++) {
+    const base = API_BASES[(currentApiBase + i) % API_BASES.length];
+    const fullUrl = url.replace(API_BASES[0], base).replace(API_BASES[1], base);
+    const finalUrl = url.startsWith('http') ? fullUrl : base + '/' + url;
+    const resp = await fetchConTimeout(finalUrl, FETCH_TIMEOUT_MS);
+    if (resp && resp.ok) {
+      if (i > 0) currentApiBase = (currentApiBase + i) % API_BASES.length;
+      return resp;
+    }
+  }
+  return null;
+}
+
+function guardarCache(clave, datos) {
+  try {
+    const obj = { ts: Date.now(), data: datos };
+    localStorage.setItem('secop_cache_' + clave, JSON.stringify(obj));
+  } catch(e) {}
+}
+function leerCache(clave, maxMinutos) {
+  try {
+    const raw = localStorage.getItem('secop_cache_' + clave);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (Date.now() - obj.ts > (maxMinutos || 60) * 60000) return null;
+    return obj.data;
+  } catch(e) { return null; }
+}
+function mostrarBannerCache(contenedor) {
+  const banner = document.createElement('div');
+  banner.className = 'status-msg';
+  banner.style.cssText = 'background:#FFF3CD;color:#856404;border:1px solid #FFEAA7;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:.82rem;';
+  banner.innerHTML = '⚠️ <strong>Datos desde caché local</strong> — La API de datos.gov.co no respondió. Se muestran los últimos resultados guardados.';
+  const area = document.getElementById(contenedor);
+  if (area) area.prepend(banner);
+}
+const FIELD_MAP = {
+  secop2: { entidad:'nombre_entidad', objeto:'descripci_n_del_proceso', valor:'valor_del_contrato', fecha:'fecha_de_firma', departamento:'departamento', modalidad:'modalidad_de_contratacion', estado:'estado_contrato', proveedor:'proveedor_adjudicado', doc_proveedor:'documento_proveedor', url:'urlproceso', unspsc:null },
+  procesos: { entidad:'nombre_entidad', objeto:'descripci_n_del_procedimiento', valor:'precio_base', fecha:'fecha_de_publicacion_del', departamento:'departamento_entidad', modalidad:'modalidad_de_contratacion', estado:'estado_del_procedimiento', proveedor:null, doc_proveedor:null, url:'urlproceso', unspsc:'codigo_principal_de_categoria' },
+  secop1: { entidad:'nombre_entidad', objeto:'detalle_del_objeto_a_contratar', valor:'cuantia_contrato', fecha:'fecha_de_firma_del_contrato', departamento:'departamento_entidad', modalidad:'modalidad_de_contratacion', estado:'estado_del_proceso', proveedor:'nom_razon_social_contratista', doc_proveedor:'identificacion_del_contratista', url:'ruta_proceso_en_secop_i', unspsc:'nombre_grupo' },
+  tvec: { entidad:'nombre_entidad', objeto:'descripci_n_del_procedimiento', valor:'precio_base', fecha:'fecha_de_publicacion_del', departamento:'departamento_entidad', modalidad:'modalidad_de_contratacion', estado:'estado_del_procedimiento', proveedor:null, doc_proveedor:null, url:'urlproceso', unspsc:null }
+};
+
+let allResults = [], filteredResults = [], currentPage = 0;
+const PAGE_SIZE = 20;
+let activeSources = new Set(['secop2','procesos','secop1','tvec']);
+let chartInstances = {};
+let oppResults = [], oppFiltered = [], oppPage = 0;
+let oppActiveSources = new Set(['procesos','secop1','tvec']);
+const OPP_PAGE_SIZE = 10;
+let profile = { name:'', nit:'', unspsc:[], departments:[], keywords:[] };
+
+// ================================================================
+// SOURCE TOGGLES
+// ================================================================
+function toggleSource(btn) {
+  const src = btn.dataset.source;
+  if (activeSources.has(src)) { activeSources.delete(src); btn.classList.remove('active'); }
+  else { activeSources.add(src); btn.classList.add('active'); }
+  applyFilters();
+}
+function toggleOppSource(btn) {
+  const src = btn.dataset.source;
+  if (oppActiveSources.has(src)) { oppActiveSources.delete(src); btn.classList.remove('active'); }
+  else { oppActiveSources.add(src); btn.classList.add('active'); }
+  applyOppFilters();
+}
+
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+document.getElementById('nitInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchContratista(); });
+
+// ================================================================
+// PROFILE
+// ================================================================
+function loadProfile() {
+  try {
+    const saved = localStorage.getItem('secop_profile');
+    if (saved) {
+      profile = JSON.parse(saved);
+      if (!profile.unspsc) profile.unspsc = [];
+      if (!profile.departments) profile.departments = [];
+      if (!profile.keywords) profile.keywords = [];
+      if (profile.name) {
+        document.getElementById('profName').value = profile.name;
+        document.getElementById('profileName').textContent = profile.name;
+        document.getElementById('profileAvatar').textContent = profile.name.charAt(0).toUpperCase();
+      }
+      if (profile.nit) document.getElementById('profNit').value = profile.nit;
+      renderChips();
+      updateProfileStatus();
+    }
+  } catch(e) {}
+}
+function saveProfile() {
+  profile.name = document.getElementById('profName').value.trim();
+  profile.nit = document.getElementById('profNit').value.trim();
+  try { localStorage.setItem('secop_profile', JSON.stringify(profile)); } catch(e) {}
+  if (profile.name) {
+    document.getElementById('profileName').textContent = profile.name;
+    document.getElementById('profileAvatar').textContent = profile.name.charAt(0).toUpperCase();
+  }
+  updateProfileStatus();
+  const ind = document.getElementById('saveIndicator');
+  ind.classList.add('show');
+  setTimeout(() => ind.classList.remove('show'), 2500);
+}
+function clearProfile() {
+  profile = { name:'', nit:'', unspsc:[], departments:[], keywords:[] };
+  document.getElementById('profName').value = '';
+  document.getElementById('profNit').value = '';
+  document.getElementById('profileName').textContent = 'Mi Perfil';
+  document.getElementById('profileAvatar').textContent = '?';
+  try { localStorage.removeItem('secop_profile'); } catch(e) {}
+  renderChips();
+  updateProfileStatus();
+}
+function addUnspsc() {
+  const v = document.getElementById('unspscInput').value.trim();
+  if (v && !profile.unspsc.includes(v)) { profile.unspsc.push(v); renderChips(); }
+  document.getElementById('unspscInput').value = '';
+}
+function addDept() {
+  const v = document.getElementById('deptInput').value.trim();
+  if (v && !profile.departments.includes(v)) { profile.departments.push(v); renderChips(); }
+  document.getElementById('deptInput').value = '';
+}
+function addKeyword() {
+  const v = document.getElementById('kwInput').value.trim();
+  if (v && !profile.keywords.includes(v)) { profile.keywords.push(v); renderChips(); }
+  document.getElementById('kwInput').value = '';
+}
+function removeChip(type, index) {
+  profile[type].splice(index, 1);
+  renderChips();
+}
+function renderChips() {
+  let h = '';
+  profile.unspsc.forEach((v,i) => { h += '<span class="chip">' + v + '<button class="remove" onclick="removeChip(\'unspsc\',' + i + ')">×</button></span>'; });
+  document.getElementById('unspscChips').innerHTML = h;
+  h = '';
+  profile.departments.forEach((v,i) => { h += '<span class="chip">' + v + '<button class="remove" onclick="removeChip(\'departments\',' + i + ')">×</button></span>'; });
+  document.getElementById('deptChips').innerHTML = h;
+  h = '';
+  profile.keywords.forEach((v,i) => { h += '<span class="chip">' + v + '<button class="remove" onclick="removeChip(\'keywords\',' + i + ')">×</button></span>'; });
+  document.getElementById('kwChips').innerHTML = h;
+}
+function updateProfileStatus() {
+  const el = document.getElementById('oppProfileStatus');
+  const count = profile.unspsc.length + profile.departments.length + profile.keywords.length;
+  el.textContent = count ? count + ' criterio' + (count !== 1 ? 's' : '') : 'Sin configurar';
+}
+
+// ================================================================
+// OPORTUNIDADES
+// ================================================================
+async function searchOportunidades() {
+  if (!profile.unspsc.length && !profile.departments.length && !profile.keywords.length) {
+    document.getElementById('oppArea').innerHTML = '<div class="status-msg">Configura tu perfil primero (UNSPSC, departamento o palabras clave)</div>';
+    return;
+  }
+  const area = document.getElementById('oppArea');
+  area.innerHTML = '<div class="status-msg"><div class="spinner"></div><br>Buscando oportunidades en fuentes activas…</div>';
+  oppResults = [];
+  const promises = [];
+  if (oppActiveSources.has('procesos')) promises.push(fetchOpenProcesos());
+  if (oppActiveSources.has('procesos') && profile.keywords.length) promises.push(fetchProcesosKeywords());
+  if (oppActiveSources.has('secop1')) promises.push(fetchOpenSecop1());
+  if (oppActiveSources.has('tvec')) promises.push(fetchOpenTvec());
+  await Promise.allSettled(promises);
+  // Deduplicate
+  const seen = new Set();
+  oppResults = oppResults.filter(r => {
+    const key = (r.objeto||'').substring(0,50) + '|' + (r.entidad||'').substring(0,30) + '|' + r.valor;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  oppResults.forEach(r => r._score = calcScore(r));
+  applyOppFilters();
+}
+
+async function fetchOpenProcesos() {
+  try {
+    const fm = FIELD_MAP.procesos;
+    let whereParts = ["upper(" + fm.estado + ") like '%ABIERTO%'"];
+    if (profile.unspsc.length) {
+      const unspscOr = profile.unspsc.map(u => fm.unspsc + " like '" + u.substring(0,4) + "%'").join(' OR ');
+      whereParts.push('(' + unspscOr + ')');
+    }
+    if (profile.departments.length) {
+      const deptOr = profile.departments.map(d => "upper(" + fm.departamento + ") like upper('%" + encodeClean(d) + "%')").join(' OR ');
+      whereParts.push('(' + deptOr + ')');
+    }
+    const params = new URLSearchParams({ '$where': whereParts.join(' AND '), '$limit': '60', '$order': fm.fecha + ' DESC' });
+    const url = API_BASES[currentApiBase] + '/' + DATASETS.procesos.id + '.json?' + params;
+    const resp = await fetchConFallback(url);
+    if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => oppResults.push(normalizeOpp(r, 'procesos'))); }
+  } catch(e) { console.warn('Opp procesos:', e); }
+}
+async function fetchProcesosKeywords() {
+  try {
+    const fm = FIELD_MAP.procesos;
+    for (const kw of profile.keywords.slice(0,3)) {
+      let where = "upper(" + fm.estado + ") like '%ABIERTO%' AND upper(" + fm.objeto + ") like upper('%" + encodeClean(kw) + "%')";
+      const params = new URLSearchParams({ '$where': where, '$limit': '30', '$order': fm.fecha + ' DESC' });
+      const url = API_BASES[currentApiBase] + '/' + DATASETS.procesos.id + '.json?' + params;
+      const resp = await fetchConFallback(url);
+      if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => oppResults.push(normalizeOpp(r, 'procesos'))); }
+    }
+  } catch(e) { console.warn('Opp kw:', e); }
+}
+async function fetchOpenSecop1() {
+  try {
+    const fm = FIELD_MAP.secop1;
+    let whereParts = ["upper(" + fm.estado + ") like '%CELEBRADO%' OR upper(" + fm.estado + ") like '%ACTIVO%'"];
+    if (profile.departments.length) {
+      const deptOr = profile.departments.map(d => "upper(" + fm.departamento + ") like upper('%" + encodeClean(d) + "%')").join(' OR ');
+      whereParts.push('(' + deptOr + ')');
+    }
+    const params = new URLSearchParams({ '$where': whereParts.join(' AND '), '$limit': '40', '$order': fm.fecha + ' DESC' });
+    const url = API_BASES[currentApiBase] + '/' + DATASETS.secop1.id + '.json?' + params;
+    const resp = await fetchConFallback(url);
+    if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => oppResults.push(normalizeOpp(r, 'secop1'))); }
+  } catch(e) { console.warn('Opp SECOP I:', e); }
+}
+async function fetchOpenTvec() {
+  try {
+    const fm = FIELD_MAP.tvec;
+    let where = "upper(" + fm.estado + ") like '%PUBLICAD%' OR upper(" + fm.estado + ") like '%ABIERTO%'";
+    const params = new URLSearchParams({ '$where': where, '$limit': '30', '$order': fm.fecha + ' DESC' });
+    const url = API_BASES[currentApiBase] + '/' + DATASETS.tvec.id + '.json?' + params;
+    const resp = await fetchConFallback(url);
+    if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => oppResults.push(normalizeOpp(r, 'tvec'))); }
+  } catch(e) { console.warn('Opp TVEC:', e); }
+}
+function normalizeOpp(r, source) {
+  const fm = FIELD_MAP[source];
+  const rawUrl = fm.url ? r[fm.url] : null;
+  let url = '';
+  if (rawUrl) url = typeof rawUrl === 'object' ? rawUrl?.url || '' : rawUrl || '';
+  if (!url && source === 'procesos') {
+    const pid = r['id_del_portafolio'] || r['numero_del_procedimiento'] || r['proceso_de_compra'] || '';
+    if (pid) url = 'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=' + encodeURIComponent(pid);
+  }
+  return {
+    _source: source,
+    entidad: r[fm.entidad] || '—',
+    objeto: r[fm.objeto] || '—',
+    valor: parseFloat(r[fm.valor]) || 0,
+    fecha: r[fm.fecha] || '',
+    departamento: r[fm.departamento] || '',
+    modalidad: r[fm.modalidad] || '',
+    estado: r[fm.estado] || '',
+    unspsc: fm.unspsc ? (r[fm.unspsc] || '') : '',
+    url: url
+  };
+}
+
+// ================================================================
+// SCORING
+// ================================================================
+function calcScore(opp) {
+  let score = 0, max = 0;
+  // UNSPSC
+  if (profile.unspsc.length) {
+    max += 40;
+    for (const u of profile.unspsc) {
+      if (opp.unspsc && opp.unspsc.startsWith(u.substring(0,4))) { score += 40; break; }
+      if (opp.unspsc && opp.unspsc.startsWith(u.substring(0,2))) { score += 20; break; }
+    }
+  }
+  // Department
+  if (profile.departments.length) {
+    max += 30;
+    for (const d of profile.departments) {
+      if (opp.departamento && opp.departamento.toUpperCase().includes(d.toUpperCase())) { score += 30; break; }
+    }
+  }
+  // Keywords
+  if (profile.keywords.length) {
+    max += 30;
+    const obj = opp.objeto.toUpperCase();
+    let kwScore = 0;
+    for (const kw of profile.keywords) {
+      if (obj.includes(kw.toUpperCase())) kwScore += 30 / profile.keywords.length;
+    }
+    score += Math.min(30, kwScore);
+  }
+  return max > 0 ? Math.round((score / max) * 100) : 0;
+}
+function scoreClass(s) { return s >= 60 ? 'score-high' : s >= 30 ? 'score-mid' : 'score-low'; }
+
+function applyOppFilters() {
+  oppFiltered = oppResults.filter(r => oppActiveSources.has(r._source));
+  oppFiltered.sort((a,b) => b._score - a._score);
+  oppPage = 0;
+  renderOpp();
+}
+
+function renderOpp() {
+  const area = document.getElementById('oppArea');
+  if (!oppFiltered.length) {
+    area.innerHTML = '<div class="status-msg">No se encontraron oportunidades con los criterios actuales</div>';
+    return;
+  }
+  const start = oppPage * OPP_PAGE_SIZE;
+  const page = oppFiltered.slice(start, start + OPP_PAGE_SIZE);
+  const fmt = v => '$' + Math.round(v).toLocaleString('es-CO');
+  let h = '<div style="font-size:.82rem;color:var(--fg-muted);margin-bottom:12px;">' + oppFiltered.length + ' oportunidad' + (oppFiltered.length !== 1 ? 'es' : '') + ' encontrada' + (oppFiltered.length !== 1 ? 's' : '') + '</div>';
+  page.forEach(opp => {
+    const sc = opp._score;
+    h += '<div class="opp-card">';
+    h += '<div class="opp-header"><div class="opp-title"><span class="src-badge ' + DATASETS[opp._source].badge + '">' + DATASETS[opp._source].label + '</span> ' + esc(opp.objeto.length > 120 ? opp.objeto.substring(0,120) + '…' : opp.objeto) + '</div>';
+    h += '<span class="score-badge ' + scoreClass(sc) + '">' + sc + '%</span></div>';
+    h += '<div class="opp-meta">';
+    h += '<span>' + esc(opp.entidad.length > 50 ? opp.entidad.substring(0,50) + '…' : opp.entidad) + '</span>';
+    if (opp.valor) h += '<span>' + fmt(opp.valor) + '</span>';
+    if (opp.departamento) h += '<span>' + esc(opp.departamento) + '</span>';
+    if (opp.fecha) h += '<span>' + opp.fecha.substring(0,10) + '</span>';
+    h += '</div>';
+    h += '<div class="opp-footer">';
+    h += '<div class="opp-match-details">';
+    if (profile.unspsc.length) { const m = opp.unspsc && profile.unspsc.some(u => opp.unspsc.startsWith(u.substring(0,4))); h += '<span class="match-item"><span class="match-dot ' + (m?'yes':'no') + '"></span>UNSPSC</span>'; }
+    if (profile.departments.length) { const m = opp.departamento && profile.departments.some(d => opp.departamento.toUpperCase().includes(d.toUpperCase())); h += '<span class="match-item"><span class="match-dot ' + (m?'yes':'no') + '"></span>Depto</span>'; }
+    if (profile.keywords.length) { const m = profile.keywords.some(k => opp.objeto.toUpperCase().includes(k.toUpperCase())); h += '<span class="match-item"><span class="match-dot ' + (m?'yes':'partial') + '"></span>Palabras</span>'; }
+    h += '</div>';
+    if (opp.url) h += '<a href="' + esc(opp.url) + '" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size:.78rem;padding:6px 12px;">Ver proceso</a>';
+    h += '</div></div>';
+  });
+  // Pagination
+  const totalPages = Math.ceil(oppFiltered.length / OPP_PAGE_SIZE);
+  if (totalPages > 1) {
+    h += '<div class="pagination">';
+    h += '<button onclick="goOppPage(-1)" ' + (oppPage === 0 ? 'disabled' : '') + '>← Anterior</button>';
+    h += '<span class="page-info">Página ' + (oppPage+1) + ' de ' + totalPages + '</span>';
+    h += '<button onclick="goOppPage(1)" ' + (oppPage >= totalPages-1 ? 'disabled' : '') + '>Siguiente →</button>';
+    h += '</div>';
+  }
+  area.innerHTML = h;
+}
+function goOppPage(dir) { oppPage += dir; renderOpp(); }
+
+// ================================================================
+// BÚSQUEDA GENERAL
+// ================================================================
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('searchBtn');
+  btn.disabled = true; btn.textContent = 'Buscando…';
+  document.getElementById('resultsArea').innerHTML = '<div class="status-msg"><div class="spinner"></div><br>Consultando fuentes de SECOP…</div>';
+  allResults = [];
+  let usedCache = false;
+  const promises = [];
+  for (const [key, ds] of Object.entries(DATASETS)) {
+    promises.push(fetchDataset(key, ds, q));
+  }
+  await Promise.allSettled(promises);
+  if (!allResults.length) {
+    const cached = leerCache('busqueda_' + q, 120);
+    if (cached && cached.length) {
+      allResults = cached;
+      usedCache = true;
+    }
+  }
+  if (allResults.length && !usedCache) guardarCache('busqueda_' + q, allResults);
+  btn.disabled = false; btn.textContent = 'Buscar';
+  applyFilters();
+  updateAnalytics();
+  if (usedCache) mostrarBannerCache('resultsArea');
+}
+
+async function fetchDataset(key, ds, q) {
+  try {
+    const fm = FIELD_MAP[key];
+    // Si la consulta es un número (cédula/NIT), buscar por documento del proveedor,
+    // no por texto del objeto. Datasets sin ese campo (procesos/tvec) se omiten para
+    // no hacer un barrido lento e inútil.
+    const isNit = /^\d{5,}$/.test(q);
+    if (isNit && !fm.doc_proveedor) return;
+    const filters = getFilters(fm);
+    let where = isNit
+      ? fm.doc_proveedor + "='" + encodeClean(q) + "'"
+      : "upper(" + fm.objeto + ") like upper('%" + encodeClean(q) + "%')";
+    if (filters) where += ' AND ' + filters;
+    const params = new URLSearchParams({ '$where': where, '$limit': '100', '$order': fm.fecha + ' DESC' });
+    const url = API_BASES[currentApiBase] + '/' + ds.id + '.json?' + params;
+    const resp = await fetchConFallback(url);
+    if (resp && resp.ok) {
+      const data = await resp.json();
+      data.forEach(r => allResults.push(normalize(r, key)));
+    }
+  } catch(e) { console.warn(key + ':', e); }
+}
+
+function getFilters(fm) {
+  const parts = [];
+  const valMin = parseFloat(document.getElementById('valMin').value) || 0;
+  const valMax = parseFloat(document.getElementById('valMax').value) || 0;
+  const dept = document.getElementById('deptFilter').value.trim();
+  const unspsc = document.getElementById('unspscFilter').value.trim();
+  const modal = document.getElementById('modalFilter').value.trim();
+  const status = document.getElementById('statusFilter').value.trim();
+  const dateFrom = document.getElementById('dateFrom').value;
+  const dateTo = document.getElementById('dateTo').value;
+  if (valMin) parts.push(fm.valor + ' >= ' + valMin);
+  if (valMax) parts.push(fm.valor + ' <= ' + valMax);
+  if (dept) parts.push("upper(" + fm.departamento + ") like upper('%" + encodeClean(dept) + "%')");
+  if (unspsc && fm.unspsc) parts.push(fm.unspsc + " like '" + encodeClean(unspsc) + "%'");
+  if (modal) parts.push("upper(" + fm.modalidad + ") like upper('%" + encodeClean(modal) + "%')");
+  if (status) parts.push("upper(" + fm.estado + ") like upper('%" + encodeClean(status) + "%')");
+  if (dateFrom) parts.push(fm.fecha + " >= '" + dateFrom + "'");
+  if (dateTo) parts.push(fm.fecha + " <= '" + dateTo + "'");
+  return parts.join(' AND ');
+}
+
+function normalize(r, source) {
+  const fm = FIELD_MAP[source];
+  const rawUrl = fm.url ? r[fm.url] : null;
+  let url = '';
+  if (rawUrl) url = typeof rawUrl === 'object' ? rawUrl?.url || '' : rawUrl || '';
+  if (!url && source === 'procesos') {
+    const pid = r['id_del_portafolio'] || r['numero_del_procedimiento'] || r['proceso_de_compra'] || '';
+    if (pid) url = 'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=' + encodeURIComponent(pid);
+  }
+  if (!url && source === 'secop1') { const ruta = r['ruta_proceso_en_secop_i'] || ''; if (ruta) url = ruta; }
+  return {
+    _source: source,
+    entidad: r[fm.entidad] || '—',
+    objeto: r[fm.objeto] || '—',
+    valor: parseFloat(r[fm.valor]) || 0,
+    fecha: r[fm.fecha] || '',
+    departamento: r[fm.departamento] || '',
+    modalidad: r[fm.modalidad] || '',
+    estado: r[fm.estado] || '',
+    proveedor: fm.proveedor ? (r[fm.proveedor] || '') : '',
+    url: url
+  };
+}
+
+// ================================================================
+// UTILITIES
+// ================================================================
+function formatCOP(v) { return '$' + Math.round(v).toLocaleString('es-CO'); }
+function encodeClean(s) { return s.replace(/'/g, "''"); }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function truncate(s, n) { return s.length > n ? s.substring(0, n) + '…' : s; }
+
+function applyFilters() {
+  filteredResults = allResults.filter(r => activeSources.has(r._source));
+  currentPage = 0;
+  renderResults();
+}
+
+function renderResults() {
+  const area = document.getElementById('resultsArea');
+  const countEl = document.getElementById('resultCount');
+  const exportBtn = document.getElementById('exportBtn');
+  if (!filteredResults.length) {
+    area.innerHTML = '<div class="status-msg">No se encontraron resultados</div>';
+    countEl.textContent = '0 resultados';
+    exportBtn.hidden = true;
+    return;
+  }
+  countEl.textContent = filteredResults.length + ' resultado' + (filteredResults.length !== 1 ? 's' : '');
+  exportBtn.hidden = false;
+  const start = currentPage * PAGE_SIZE;
+  const page = filteredResults.slice(start, start + PAGE_SIZE);
+  let h = '<div class="table-wrap"><table><thead><tr><th>Fuente</th><th>Entidad</th><th>Objeto</th><th style="text-align:right">Valor</th><th>Fecha</th><th>Estado</th><th>Ver</th></tr></thead><tbody>';
+  page.forEach(r => {
+    h += '<tr>';
+    h += '<td><span class="src-badge ' + DATASETS[r._source].badge + '">' + DATASETS[r._source].label + '</span></td>';
+    h += '<td>' + esc(truncate(r.entidad, 40)) + '</td>';
+    h += '<td class="object-col">' + esc(truncate(r.objeto, 80)) + '</td>';
+    h += '<td class="val-col">' + (r.valor ? formatCOP(r.valor) : '—') + '</td>';
+    h += '<td style="white-space:nowrap;">' + (r.fecha ? r.fecha.substring(0,10) : '—') + '</td>';
+    h += '<td>' + esc(truncate(r.estado, 20)) + '</td>';
+    h += '<td>' + (r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">Abrir</a>' : '—') + '</td>';
+    h += '</tr>';
+  });
+  h += '</tbody></table></div>';
+  const totalPages = Math.ceil(filteredResults.length / PAGE_SIZE);
+  if (totalPages > 1) {
+    h += '<div class="pagination">';
+    h += '<button onclick="goPage(-1)" ' + (currentPage === 0 ? 'disabled' : '') + '>← Anterior</button>';
+    h += '<span class="page-info">Página ' + (currentPage+1) + ' de ' + totalPages + '</span>';
+    h += '<button onclick="goPage(1)" ' + (currentPage >= totalPages-1 ? 'disabled' : '') + '>Siguiente →</button>';
+    h += '</div>';
+  }
+  area.innerHTML = h;
+}
+function goPage(dir) { currentPage += dir; renderResults(); }
+
+function exportCSV() {
+  if (!filteredResults.length) return;
+  let csv = 'Fuente,Entidad,Objeto,Valor,Fecha,Estado,Departamento,Modalidad,Proveedor,URL\n';
+  filteredResults.forEach(r => {
+    csv += '"' + DATASETS[r._source].label + '","' + (r.entidad||'').replace(/"/g,'""') + '","' + (r.objeto||'').replace(/"/g,'""') + '",' + (r.valor||0) + ',"' + (r.fecha||'').substring(0,10) + '","' + (r.estado||'') + '","' + (r.departamento||'') + '","' + (r.modalidad||'').replace(/"/g,'""') + '","' + (r.proveedor||'').replace(/"/g,'""') + '","' + (r.url||'') + '"\n';
+  });
+  const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'secop_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ================================================================
+// ANALYTICS
+// ================================================================
+function updateAnalytics() {
+  if (!filteredResults.length) {
+    document.getElementById('analyticsEmpty').hidden = false;
+    document.getElementById('analyticsContent').hidden = true;
+    return;
+  }
+  document.getElementById('analyticsEmpty').hidden = true;
+  document.getElementById('analyticsContent').hidden = false;
+  const vals = filteredResults.map(r => r.valor).filter(v => v > 0);
+  const total = vals.reduce((a,b) => a+b, 0);
+  const avg = vals.length ? total / vals.length : 0;
+  const row = document.getElementById('statsRow');
+  row.innerHTML = '<div class="stat-card"><div class="stat-value">' + filteredResults.length + '</div><div class="stat-label">Resultados</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + formatCOP(total) + '</div><div class="stat-label">Valor total</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + formatCOP(avg) + '</div><div class="stat-label">Valor promedio</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + Object.keys(DATASETS).filter(k => filteredResults.some(r => r._source === k)).length + '</div><div class="stat-label">Fuentes</div></div>';
+
+  const grid = document.getElementById('chartsGrid');
+  grid.innerHTML = '<div class="chart-card"><h3>Por fuente</h3><canvas id="chartSource"></canvas></div>'
+    + '<div class="chart-card"><h3>Por modalidad (top 8)</h3><canvas id="chartModal"></canvas></div>';
+
+  // Destroy previous charts
+  Object.values(chartInstances).forEach(c => c.destroy());
+  chartInstances = {};
+
+  // Source chart
+  const srcCounts = {};
+  filteredResults.forEach(r => { srcCounts[DATASETS[r._source].label] = (srcCounts[DATASETS[r._source].label]||0) + 1; });
+  chartInstances.source = mkBar('chartSource', Object.keys(srcCounts), Object.values(srcCounts));
+
+  // Modalidad chart
+  const modCounts = {};
+  filteredResults.forEach(r => { const m = r.modalidad || 'Sin info'; modCounts[m] = (modCounts[m]||0)+1; });
+  const modSorted = Object.entries(modCounts).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  chartInstances.modal = mkBar('chartModal', modSorted.map(m=>m[0].length>25?m[0].substring(0,25)+'…':m[0]), modSorted.map(m=>m[1]));
+}
+function mkBar(id, labels, data) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return null;
+  return new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: 'rgba(38,116,91,.7)', borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+}
+
+// ================================================================
+// CONTRATISTA
+// ================================================================
+async function searchContratista() {
+  const q = document.getElementById('nitInput').value.trim();
+  if (!q) return;
+  const area = document.getElementById('contratistaArea');
+  area.innerHTML = '<div class="status-msg"><div class="spinner"></div><br>Consultando registros del contratista…</div>';
+  let results = [];
+  let usedCache = false;
+  const promises = [];
+  // SECOP II
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.secop2;
+      const isNit = /^\d+$/.test(q);
+      const where = isNit ? fm.doc_proveedor + "='" + encodeClean(q) + "'" : "upper(" + fm.proveedor + ") like upper('%" + encodeClean(q) + "%')";
+      const params = new URLSearchParams({ '$where': where, '$limit': '50', '$order': fm.fecha + ' DESC' });
+      const url = API_BASES[currentApiBase] + '/' + DATASETS.secop2.id + '.json?' + params;
+      const resp = await fetchConFallback(url);
+      if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => results.push(normalize(r, 'secop2'))); }
+    } catch(e) {}
+  })());
+  // SECOP I
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.secop1;
+      const isNit = /^\d+$/.test(q);
+      const where = isNit ? fm.doc_proveedor + "='" + encodeClean(q) + "'" : "upper(" + fm.proveedor + ") like upper('%" + encodeClean(q) + "%')";
+      const params = new URLSearchParams({ '$where': where, '$limit': '50', '$order': fm.fecha + ' DESC' });
+      const url = API_BASES[currentApiBase] + '/' + DATASETS.secop1.id + '.json?' + params;
+      const resp = await fetchConFallback(url);
+      if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => results.push(normalize(r, 'secop1'))); }
+    } catch(e) {}
+  })());
+  await Promise.allSettled(promises);
+  if (!results.length) {
+    const cached = leerCache('contratista_' + q, 120);
+    if (cached && cached.length) { results = cached; usedCache = true; }
+  }
+  if (!results.length) {
+    area.innerHTML = '<div class="status-msg">No se encontraron registros para "' + esc(q) + '"</div>';
+    return;
+  }
+  if (results.length && !usedCache) guardarCache('contratista_' + q, results);
+  // Summary
+  const totalVal = results.reduce((s,r) => s + r.valor, 0);
+  const entities = new Set(results.map(r => r.entidad));
+  let h = '<div class="stats-row" style="margin-bottom:16px;">';
+  h += '<div class="stat-card"><div class="stat-value">' + results.length + '</div><div class="stat-label">Contratos</div></div>';
+  h += '<div class="stat-card"><div class="stat-value">' + formatCOP(totalVal) + '</div><div class="stat-label">Valor total</div></div>';
+  h += '<div class="stat-card"><div class="stat-value">' + entities.size + '</div><div class="stat-label">Entidades</div></div>';
+  h += '</div>';
+  h += '<div class="table-wrap"><table><thead><tr><th>Fuente</th><th>Entidad</th><th>Objeto</th><th style="text-align:right">Valor</th><th>Fecha</th><th>Estado</th><th>Ver</th></tr></thead><tbody>';
+  results.forEach(r => {
+    h += '<tr><td><span class="src-badge ' + DATASETS[r._source].badge + '">' + DATASETS[r._source].label + '</span></td>';
+    h += '<td>' + esc(truncate(r.entidad, 35)) + '</td>';
+    h += '<td class="object-col">' + esc(truncate(r.objeto, 60)) + '</td>';
+    h += '<td class="val-col">' + (r.valor ? formatCOP(r.valor) : '—') + '</td>';
+    h += '<td style="white-space:nowrap;">' + (r.fecha ? r.fecha.substring(0,10) : '—') + '</td>';
+    h += '<td>' + esc(truncate(r.estado, 20)) + '</td>';
+    h += '<td>' + (r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">Abrir</a>' : '—') + '</td></tr>';
+  });
+  h += '</tbody></table></div>';
+  area.innerHTML = h;
+}
+
+// ================================================================
+// VIGILANCIA
+// ================================================================
+async function searchVigilancia() {
+  const q = document.getElementById('vigSearchInput').value.trim();
+  if (!q) return;
+  const btn = document.getElementById('vigSearchBtn');
+  btn.disabled = true; btn.textContent = 'Analizando…';
+  document.getElementById('vigReportArea').hidden = true;
+  document.getElementById('vigLoadingArea').innerHTML = '<div class="status-msg"><div class="spinner"></div><br>Recopilando contratos de "' + esc(q) + '"…</div>';
+  let vigData = [];
+  const valMin = parseFloat(document.getElementById('vigValMin').value) || 0;
+  const valMax = parseFloat(document.getElementById('vigValMax').value) || 0;
+  const dateFrom = document.getElementById('vigDateFrom').value;
+  const dateTo = document.getElementById('vigDateTo').value;
+  const promises = [];
+
+  // SECOP II
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.secop2;
+      let where = "(upper(" + fm.entidad + ") like upper('%" + encodeClean(q) + "%') OR upper(" + fm.proveedor + ") like upper('%" + encodeClean(q) + "%'))";
+      if (valMin) where += ' AND ' + fm.valor + ' >= ' + valMin;
+      if (valMax) where += ' AND ' + fm.valor + ' <= ' + valMax;
+      if (dateFrom) where += " AND " + fm.fecha + " >= '" + dateFrom + "'";
+      if (dateTo) where += " AND " + fm.fecha + " <= '" + dateTo + "'";
+      const params = new URLSearchParams({ '$where': where, '$limit': '200', '$order': fm.fecha + ' DESC' });
+      const url = API_BASES[currentApiBase] + '/' + DATASETS.secop2.id + '.json?' + params;
+      const resp = await fetchConFallback(url);
+      if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => vigData.push({ ...normalize(r,'secop2'), doc_proveedor: r[fm.doc_proveedor]||'' })); }
+    } catch(e) {}
+  })());
+  // SECOP I
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.secop1;
+      let where = "(upper(" + fm.entidad + ") like upper('%" + encodeClean(q) + "%') OR upper(" + fm.proveedor + ") like upper('%" + encodeClean(q) + "%'))";
+      if (valMin) where += ' AND ' + fm.valor + ' >= ' + valMin;
+      if (valMax) where += ' AND ' + fm.valor + ' <= ' + valMax;
+      if (dateFrom) where += " AND " + fm.fecha + " >= '" + dateFrom + "'";
+      if (dateTo) where += " AND " + fm.fecha + " <= '" + dateTo + "'";
+      const params = new URLSearchParams({ '$where': where, '$limit': '200', '$order': fm.fecha + ' DESC' });
+      const url = API_BASES[currentApiBase] + '/' + DATASETS.secop1.id + '.json?' + params;
+      const resp = await fetchConFallback(url);
+      if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => vigData.push({ ...normalize(r,'secop1'), doc_proveedor: r[fm.doc_proveedor]||'' })); }
+    } catch(e) {}
+  })());
+
+  await Promise.allSettled(promises);
+  btn.disabled = false; btn.textContent = 'Analizar';
+  document.getElementById('vigLoadingArea').innerHTML = '';
+
+  if (!vigData.length) {
+    document.getElementById('vigLoadingArea').innerHTML = '<div class="status-msg">No se encontraron contratos para "' + esc(q) + '"</div>';
+    return;
+  }
+
+  document.getElementById('vigReportArea').hidden = false;
+  analyzeVigilancia(vigData);
+}
+
+function analyzeVigilancia(vigData) {
+  const totalVal = vigData.reduce((s,r) => s + r.valor, 0);
+  const entities = new Set(vigData.map(r => r.entidad));
+  const providers = new Set(vigData.filter(r => r.proveedor).map(r => r.proveedor));
+  const fmt = v => '$' + Math.round(v).toLocaleString('es-CO');
+
+  // Summary
+  document.getElementById('vigSummary').innerHTML = '<div class="stats-row">'
+    + '<div class="stat-card"><div class="stat-value">' + vigData.length + '</div><div class="stat-label">Contratos</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + fmt(totalVal) + '</div><div class="stat-label">Valor total</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + entities.size + '</div><div class="stat-label">Entidades</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + providers.size + '</div><div class="stat-label">Proveedores</div></div>'
+    + '</div>';
+
+  // ---- ALERTS ----
+  const alerts = [];
+
+  // 1. SOBRECOSTOS - valores atípicamente altos
+  const vals = vigData.map(r => r.valor).filter(v => v > 0).sort((a,b)=>a-b);
+  if (vals.length >= 5) {
+    const q3 = vals[Math.floor(vals.length * 0.75)];
+    const q1 = vals[Math.floor(vals.length * 0.25)];
+    const iqr = q3 - q1;
+    const upper = q3 + 2 * iqr;
+    vigData.forEach(r => {
+      if (r.valor > upper && r.valor > 500000000) {
+        alerts.push({
+          type: 'sobrecosto',
+          icon: '!',
+          severity: 'alta',
+          title: 'Valor atípicamente alto',
+          detail: 'Contrato por ' + fmt(r.valor) + ' en "' + esc(r.entidad.substring(0,35)) + '" supera significativamente el rango intercuartílico (límite: ' + fmt(upper) + ').',
+          contract: r
+        });
+      }
+    });
+  }
+
+  // 2. CONCENTRACIÓN - un proveedor acapara mucho
+  const provTotals = {};
+  vigData.forEach(r => {
+    const p = r.proveedor || 'Sin info';
+    if (p === 'Sin info') return;
+    provTotals[p] = (provTotals[p]||0) + r.valor;
+  });
+  for (const [prov, val] of Object.entries(provTotals)) {
+    const pct = totalVal > 0 ? (val / totalVal) * 100 : 0;
+    if (pct > 40 && val > 100000000) {
+      alerts.push({
+        type: 'concentracion',
+        icon: '!',
+        severity: 'alta',
+        title: 'Alta concentración en un proveedor',
+        detail: '"' + esc(prov.substring(0,40)) + '" concentra el ' + pct.toFixed(1) + '% del valor total (' + fmt(val) + ' de ' + fmt(totalVal) + ').',
+        contract: vigData.find(r => r.proveedor === prov)
+      });
+    }
+  }
+
+  // 3. FRACCIONAMIENTO - múltiples contratos directos similares
+  const directos = vigData.filter(r => r.modalidad && (r.modalidad.toUpperCase().includes('DIRECTA') || r.modalidad.toUpperCase().includes('MINIMA')));
+  const entDirectMap = {};
+  directos.forEach(r => {
+    const ent = r.entidad;
+    if (!entDirectMap[ent]) entDirectMap[ent] = [];
+    entDirectMap[ent].push(r);
+  });
+  for (const [ent, contracts] of Object.entries(entDirectMap)) {
+    for (let i = 0; i < contracts.length; i++) {
+      let similares = [contracts[i]];
+      for (let j = i + 1; j < contracts.length; j++) {
+        const ratio = contracts[j].valor / contracts[i].valor;
+        if (ratio > 0.7 && ratio < 1.3 && contracts[i].valor > 5000000) {
+          const o1 = contracts[i].objeto.substring(0,20).toUpperCase();
+          const o2 = contracts[j].objeto.substring(0,20).toUpperCase();
+          if (o1 === o2 || contracts[i].objeto.toUpperCase().includes(contracts[j].objeto.substring(0,15).toUpperCase())) {
+            similares.push(contracts[j]);
+          }
+        }
+      }
+      if (similares.length >= 3) {
+        const totalFrac = similares.reduce((s,r) => s + r.valor, 0);
+        alerts.push({
+          type: 'fraccionamiento',
+          icon: '–',
+          severity: 'alta',
+          title: 'Posible fraccionamiento contractual',
+          detail: similares.length + ' contratos directos similares en "' + esc(ent.substring(0,35)) + '" con objeto parecido ("' + esc(contracts[i].objeto.substring(0,40)) + '...") por valores cercanos (' + fmt(contracts[i].valor) + ' c/u). Total acumulado: ' + fmt(totalFrac) + '.',
+          contract: contracts[i]
+        });
+        break;
+      }
+    }
+  }
+
+  // 4. PATRONES ATÍPICOS
+  vigData.forEach(r => {
+    if (!r.fecha || !r.valor) return;
+    const d = new Date(r.fecha);
+    const month = d.getMonth();
+    if ((month === 11) && r.valor > 200000000) {
+      alerts.push({ type: 'atipico', icon: '!', severity: 'media', title: 'Contrato de alto valor en diciembre', detail: 'Contrato por ' + fmt(r.valor) + ' firmado en diciembre en "' + esc(r.entidad.substring(0,35)) + '". Posible gasto de cierre de vigencia.', contract: r });
+    }
+  });
+  vigData.forEach(r => {
+    if (r.valor >= 100000000 && r.valor % 100000000 === 0) {
+      alerts.push({ type: 'atipico', icon: '!', severity: 'baja', title: 'Valor exactamente redondo', detail: 'Contrato por exactamente ' + fmt(r.valor) + ' en "' + esc(r.entidad.substring(0,35)) + '". Los valores redondos pueden indicar estimaciones sin estudio de mercado.', contract: r });
+    }
+  });
+
+  const sevOrder = { alta: 0, media: 1, baja: 2 };
+  alerts.sort((a,b) => (sevOrder[a.severity]||9) - (sevOrder[b.severity]||9));
+
+  const alertsEl = document.getElementById('vigAlertsList');
+  if (!alerts.length) {
+    alertsEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--fg-muted);">No se detectaron alertas significativas en los datos consultados.</div>';
+  } else {
+    let ah = '';
+    const sevColors = { alta: '#e74c3c', media: '#f39c12', baja: '#3498db' };
+    const sevLabels = { alta: 'ALTA', media: 'MEDIA', baja: 'BAJA' };
+    alerts.forEach(a => {
+      ah += '<div style="border-left:4px solid ' + sevColors[a.severity] + ';padding:12px 14px;margin-bottom:10px;background:var(--bg-card,var(--bg-secondary,#f8f9fa));border-radius:0 8px 8px 0;">';
+      ah += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">';
+      ah += '<span style="font-size:1rem;font-weight:700;color:' + sevColors[a.severity] + ';">' + a.icon + '</span>';
+      ah += '<strong style="flex:1;">' + a.title + '</strong>';
+      ah += '<span style="font-size:.7rem;font-weight:700;color:#fff;background:' + sevColors[a.severity] + ';padding:2px 8px;border-radius:10px;">' + sevLabels[a.severity] + '</span>';
+      ah += '</div>';
+      ah += '<p style="font-size:.82rem;margin:0 0 6px;color:var(--fg-secondary);">' + a.detail + '</p>';
+      if (a.contract && a.contract.url) {
+        ah += '<a href="' + esc(a.contract.url) + '" target="_blank" rel="noopener" style="font-size:.78rem;color:var(--accent);">Ver proceso en SECOP</a>';
+      }
+      ah += '</div>';
+    });
+    ah = '<p style="font-size:.82rem;font-weight:600;margin-bottom:10px;">Se detectaron ' + alerts.length + ' alerta' + (alerts.length !== 1 ? 's' : '') + '</p>' + ah;
+    alertsEl.innerHTML = ah;
+  }
+
+  // ---- TOP PROVEEDORES ----
+  const provMap = {};
+  vigData.forEach(r => {
+    const prov = (r.proveedor || r.doc_proveedor || 'Sin info').trim();
+    if (!prov || prov === 'Sin info') return;
+    if (!provMap[prov]) provMap[prov] = { count: 0, total: 0, doc: r.doc_proveedor };
+    provMap[prov].count++;
+    provMap[prov].total += r.valor;
+  });
+  const topProv = Object.entries(provMap).sort((a,b) => b[1].total - a[1].total).slice(0, 10);
+  let ph = '<div class="table-wrap"><table><thead><tr><th>Proveedor</th><th style="text-align:right">Contratos</th><th style="text-align:right">Valor total</th><th style="text-align:right">% del total</th></tr></thead><tbody>';
+  topProv.forEach(([name, info]) => {
+    const pct = totalVal > 0 ? ((info.total / totalVal) * 100).toFixed(1) : '0';
+    const barW = totalVal > 0 ? Math.max(2, (info.total / totalVal) * 100) : 0;
+    ph += '<tr><td>' + esc(name.length > 45 ? name.substring(0,45) + '...' : name) + '</td>';
+    ph += '<td style="text-align:right">' + info.count + '</td>';
+    ph += '<td style="text-align:right;white-space:nowrap;">' + fmt(info.total) + '</td>';
+    ph += '<td style="text-align:right"><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end;"><span>' + pct + '%</span><div style="width:60px;height:8px;background:var(--bg-secondary,#eee);border-radius:4px;overflow:hidden;"><div style="width:' + barW + '%;height:100%;background:var(--accent);border-radius:4px;"></div></div></div></td>';
+    ph += '</tr>';
+  });
+  ph += '</tbody></table></div>';
+  document.getElementById('vigProveedoresTable').innerHTML = ph;
+
+  // ---- CONTRACTS TABLE ----
+  document.getElementById('vigContractCount').textContent = vigData.length;
+  let ch = '<table><thead><tr><th>Fuente</th><th>Entidad</th><th>Objeto</th><th style="text-align:right">Valor</th><th>Proveedor</th><th>Fecha</th><th>Modalidad</th><th>Ver</th></tr></thead><tbody>';
+  vigData.slice(0, 50).forEach(r => {
+    ch += '<tr>';
+    ch += '<td><span class="source-badge ' + DATASETS[r._source].badge + '">' + DATASETS[r._source].label + '</span></td>';
+    ch += '<td>' + esc(r.entidad.length > 30 ? r.entidad.substring(0,30) + '...' : r.entidad) + '</td>';
+    ch += '<td>' + esc(r.objeto.length > 50 ? r.objeto.substring(0,50) + '...' : r.objeto) + '</td>';
+    ch += '<td style="text-align:right;white-space:nowrap;">' + fmt(r.valor) + '</td>';
+    ch += '<td style="font-size:.75rem;">' + esc((r.proveedor || '—').length > 30 ? r.proveedor.substring(0,30) + '...' : (r.proveedor || '—')) + '</td>';
+    ch += '<td style="white-space:nowrap;">' + (r.fecha ? r.fecha.substring(0,10) : '—') + '</td>';
+    ch += '<td style="font-size:.75rem;">' + esc(r.modalidad.length > 20 ? r.modalidad.substring(0,20) + '...' : r.modalidad) + '</td>';
+    ch += '<td>' + (r.url ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener" class="link-btn">Abrir</a>' : '—') + '</td>';
+    ch += '</tr>';
+  });
+  ch += '</tbody></table>';
+  if (vigData.length > 50) ch += '<p style="text-align:center;font-size:.78rem;color:var(--fg-muted);margin-top:8px;">Mostrando 50 de ' + vigData.length + ' contratos</p>';
+  document.getElementById('vigContractsTable').innerHTML = ch;
+}
+
+document.getElementById('vigSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchVigilancia(); });
+
+// ================================================================
+// ESTUDIOS DE SECTOR
+// ================================================================
+let estResults = [], estFiltered = [], estPage = 0;
+let estActiveSources = new Set(['secop2','procesos','secop1']);
+const EST_PAGE_SIZE = 20;
+
+function toggleEstSource(btn) {
+  const src = btn.dataset.source;
+  if (estActiveSources.has(src)) { estActiveSources.delete(src); btn.classList.remove('active'); }
+  else { estActiveSources.add(src); btn.classList.add('active'); }
+  filterEstResults();
+}
+
+async function searchEstudios() {
+  const q = document.getElementById('estSearchInput').value.trim();
+  if (!q && !document.getElementById('estUnspsc').value.trim()) {
+    document.getElementById('estResultsArea').innerHTML = '<div class="status-msg">Ingresa un objeto o código UNSPSC para buscar</div>';
+    return;
+  }
+  const btn = document.getElementById('estSearchBtn');
+  btn.disabled = true; btn.textContent = 'Buscando...';
+  document.getElementById('estResultsArea').innerHTML = '<div class="status-msg"><div class="spinner"></div><br>Consultando fuentes de SECOP...</div>';
+  document.getElementById('estActionsBar').hidden = false;
+  document.getElementById('estStatsArea').hidden = true;
+
+  const valMin = parseFloat(document.getElementById('estValMin').value) || 0;
+  const valMax = parseFloat(document.getElementById('estValMax').value) || 0;
+  const dept = document.getElementById('estDept').value.trim();
+  const unspsc = document.getElementById('estUnspsc').value.trim();
+  const modalidad = document.getElementById('estModalidad').value;
+  const estado = document.getElementById('estEstado').value;
+  const dateFrom = document.getElementById('estDateFrom').value;
+  const dateTo = document.getElementById('estDateTo').value;
+
+  estResults = [];
+  const promises = [];
+
+  // SECOP II Contratos
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.secop2;
+      let where = [];
+      if (q) where.push("upper(" + fm.objeto + ") like upper('%" + encodeClean(q) + "%')");
+      if (valMin) where.push(fm.valor + " >= " + valMin);
+      if (valMax) where.push(fm.valor + " <= " + valMax);
+      if (dept) where.push("upper(" + fm.departamento + ") like upper('%" + encodeClean(dept) + "%')");
+      if (modalidad) where.push("upper(" + fm.modalidad + ") like upper('%" + encodeClean(modalidad) + "%')");
+      if (estado) where.push("upper(" + fm.estado + ") like upper('%" + encodeClean(estado) + "%')");
+      if (dateFrom) where.push(fm.fecha + " >= '" + dateFrom + "'");
+      if (dateTo) where.push(fm.fecha + " <= '" + dateTo + "'");
+      const params = new URLSearchParams({ '$where': where.join(' AND '), '$limit': '80', '$order': fm.fecha + ' DESC' });
+      const resp = await fetchConFallback(API_BASES[currentApiBase] + '/' + DATASETS.secop2.id + '.json?' + params);
+      if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => estResults.push({ ...r, _source: 'secop2' })); }
+    } catch(e) { console.warn('Est SECOP II error:', e); }
+  })());
+
+  // Procesos II
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.procesos;
+      let where = [];
+      if (q) where.push("upper(" + fm.objeto + ") like upper('%" + encodeClean(q) + "%')");
+      if (valMin) where.push(fm.valor + " >= " + valMin);
+      if (valMax) where.push(fm.valor + " <= " + valMax);
+      if (dept) where.push("upper(" + fm.departamento + ") like upper('%" + encodeClean(dept) + "%')");
+      if (unspsc) where.push(fm.unspsc + " like '" + encodeClean(unspsc) + "%'");
+      if (modalidad) where.push("upper(" + fm.modalidad + ") like upper('%" + encodeClean(modalidad) + "%')");
+      if (estado) where.push("upper(" + fm.estado + ") like upper('%" + encodeClean(estado) + "%')");
+      if (dateFrom) where.push(fm.fecha + " >= '" + dateFrom + "'");
+      if (dateTo) where.push(fm.fecha + " <= '" + dateTo + "'");
+      const params = new URLSearchParams({ '$where': where.join(' AND '), '$limit': '80', '$order': fm.fecha + ' DESC' });
+      const resp = await fetchConFallback(API_BASES[currentApiBase] + '/' + DATASETS.procesos.id + '.json?' + params);
+      if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => estResults.push({ ...r, _source: 'procesos' })); }
+    } catch(e) { console.warn('Est Procesos error:', e); }
+  })());
+
+  // SECOP I
+  promises.push((async () => {
+    try {
+      const fm = FIELD_MAP.secop1;
+      let where = [];
+      if (q) where.push("upper(" + fm.objeto + ") like upper('%" + encodeClean(q) + "%')");
+      if (valMin) where.push(fm.valor + " >= " + valMin);
+      if (valMax) where.push(fm.valor + " <= " + valMax);
+      if (dept) where.push("upper(" + fm.departamento + ") like upper('%" + encodeClean(dept) + "%')");
+      if (unspsc) where.push(fm.unspsc + " like '" + encodeClean(unspsc) + "%'");
+      if (modalidad) where.push("upper(" + fm.modalidad + ") like upper('%" + encodeClean(modalidad) + "%')");
+      if (estado) where.push("upper(" + fm.estado + ") like upper('%" + encodeClean(estado) + "%')");
+      if (dateFrom) where.push(fm.fecha + " >= '" + dateFrom + "'");
+      if (dateTo) where.push(fm.fecha + " <= '" + dateTo + "'");
+      const params = new URLSearchParams({ '$where': where.join(' AND '), '$limit': '80', '$order': fm.fecha + ' DESC' });
+      const resp = await fetchConFallback(API_BASES[currentApiBase] + '/' + DATASETS.secop1.id + '.json?' + params);
+      if (resp && resp.ok) { const data = await resp.json(); data.forEach(r => estResults.push({ ...r, _source: 'secop1' })); }
+    } catch(e) { console.warn('Est SECOP I error:', e); }
+  })());
+
+  await Promise.all(promises);
+  btn.disabled = false; btn.textContent = 'Buscar';
+  filterEstResults();
+}
+
+function filterEstResults() {
+  estFiltered = estResults.filter(r => estActiveSources.has(r._source));
+  estPage = 0;
+  renderEstResults();
+  renderEstStats();
+}
+
+function renderEstResults() {
+  const area = document.getElementById('estResultsArea');
+  const countEl = document.getElementById('estResultCount');
+  if (!estFiltered.length) {
+    area.innerHTML = '<div class="status-msg">No se encontraron procesos similares</div>';
+    countEl.textContent = '0 resultados';
+    document.getElementById('estExportBtn').hidden = true;
+    document.getElementById('estStatsArea').hidden = true;
+    return;
+  }
+  countEl.textContent = estFiltered.length + ' proceso' + (estFiltered.length !== 1 ? 's' : '') + ' encontrado' + (estFiltered.length !== 1 ? 's' : '');
+  document.getElementById('estExportBtn').hidden = false;
+
+  const start = estPage * EST_PAGE_SIZE;
+  const page = estFiltered.slice(start, start + EST_PAGE_SIZE);
+  let h = '<div class="table-wrap"><table><thead><tr><th>Fuente</th><th>Entidad</th><th>Objeto</th><th style="text-align:right">Valor</th><th>Fecha</th><th>Estado</th><th>Modalidad</th><th>Ver</th></tr></thead><tbody>';
+  for (const r of page) {
+    const fm = FIELD_MAP[r._source];
+    const entidad = r[fm.entidad] || '—';
+    const objeto = r[fm.objeto] || '—';
+    const valor = r[fm.valor] ? '$' + Number(r[fm.valor]).toLocaleString('es-CO',{maximumFractionDigits:0}) : '—';
+    const fecha = r[fm.fecha] ? r[fm.fecha].substring(0, 10) : '—';
+    const estado = r[fm.estado] || '—';
+    const modalidad = r[fm.modalidad] || '—';
+    const rawUrl = fm.url ? r[fm.url] : null;
+    let url = '';
+    if (rawUrl) url = typeof rawUrl === 'object' ? rawUrl?.url || '' : rawUrl || '';
+    if (!url && r._source === 'procesos') {
+      const pid = r['id_del_portafolio'] || r['numero_del_procedimiento'] || r['proceso_de_compra'] || '';
+      if (pid) url = 'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=' + encodeURIComponent(pid);
+    }
+    if (!url && r._source === 'secop1') { const ruta = r['ruta_proceso_en_secop_i'] || ''; if (ruta) url = ruta; }
+    const badge = DATASETS[r._source].badge;
+    h += '<tr>';
+    h += '<td><span class="source-badge ' + badge + '">' + DATASETS[r._source].label + '</span></td>';
+    h += '<td>' + esc(entidad.length > 40 ? entidad.substring(0,40) + '...' : entidad) + '</td>';
+    h += '<td>' + esc(objeto.length > 60 ? objeto.substring(0,60) + '...' : objeto) + '</td>';
+    h += '<td style="text-align:right;white-space:nowrap;">' + valor + '</td>';
+    h += '<td style="white-space:nowrap;">' + fecha + '</td>';
+    h += '<td>' + esc(estado) + '</td>';
+    h += '<td style="font-size:.75rem;">' + esc(modalidad.length > 25 ? modalidad.substring(0,25) + '...' : modalidad) + '</td>';
+    h += '<td>' + (url ? '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="link-btn">Abrir</a>' : '—') + '</td>';
+    h += '</tr>';
+  }
+  h += '</tbody></table></div>';
+
+  const totalPages = Math.ceil(estFiltered.length / EST_PAGE_SIZE);
+  if (totalPages > 1) {
+    h += '<div style="display:flex;justify-content:center;gap:8px;margin-top:12px;">';
+    if (estPage > 0) h += '<button class="btn btn-secondary" onclick="estPage--;renderEstResults();">← Anterior</button>';
+    h += '<span style="align-self:center;font-size:.8rem;color:var(--fg-muted);">Página ' + (estPage+1) + ' de ' + totalPages + '</span>';
+    if (estPage < totalPages - 1) h += '<button class="btn btn-secondary" onclick="estPage++;renderEstResults();">Siguiente →</button>';
+    h += '</div>';
+  }
+  area.innerHTML = h;
+}
+
+function renderEstStats() {
+  if (!estFiltered.length) { document.getElementById('estStatsArea').hidden = true; return; }
+  document.getElementById('estStatsArea').hidden = false;
+  const valores = estFiltered.map(r => {
+    const fm = FIELD_MAP[r._source];
+    return parseFloat(r[fm.valor]) || 0;
+  }).filter(v => v > 0).sort((a,b) => a - b);
+
+  if (!valores.length) { document.getElementById('estStatsArea').hidden = true; return; }
+
+  const sum = valores.reduce((a,b) => a+b, 0);
+  const avg = sum / valores.length;
+  const min = valores[0];
+  const max = valores[valores.length - 1];
+  const median = valores.length % 2 === 0
+    ? (valores[valores.length/2 - 1] + valores[valores.length/2]) / 2
+    : valores[Math.floor(valores.length/2)];
+
+  const fmt = v => '$' + Math.round(v).toLocaleString('es-CO');
+  const row = document.getElementById('estStatsRow');
+  row.innerHTML = ''
+    + '<div class="stat-card"><div class="stat-value">' + estFiltered.length + '</div><div class="stat-label">Procesos encontrados</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + fmt(avg) + '</div><div class="stat-label">Valor promedio</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + fmt(median) + '</div><div class="stat-label">Mediana</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + fmt(min) + '</div><div class="stat-label">Valor mínimo</div></div>'
+    + '<div class="stat-card"><div class="stat-value">' + fmt(max) + '</div><div class="stat-label">Valor máximo</div></div>';
+}
+
+function exportEstCSV() {
+  if (!estFiltered.length) return;
+  let csv = 'Fuente,Entidad,Objeto,Valor,Fecha,Estado,Modalidad,URL\n';
+  for (const r of estFiltered) {
+    const fm = FIELD_MAP[r._source];
+    const csvRawUrl = fm.url ? r[fm.url] : null;
+    let csvUrl = '';
+    if (csvRawUrl) csvUrl = typeof csvRawUrl === 'object' ? csvRawUrl?.url || '' : csvRawUrl || '';
+    if (!csvUrl && r._source === 'procesos') {
+      const pid = r['id_del_portafolio'] || r['numero_del_procedimiento'] || r['proceso_de_compra'] || '';
+      if (pid) csvUrl = 'https://community.secop.gov.co/Public/Tendering/OpportunityDetail/Index?noticeUID=' + encodeURIComponent(pid);
+    }
+    csv += '"' + DATASETS[r._source].label + '","' + (r[fm.entidad]||'').replace(/"/g,'""') + '","' + (r[fm.objeto]||'').replace(/"/g,'""') + '",' + (r[fm.valor]||0) + ',"' + (r[fm.fecha]||'').substring(0,10) + '","' + (r[fm.estado]||'') + '","' + (r[fm.modalidad]||'').replace(/"/g,'""') + '","' + csvUrl + '"\n';
+  }
+  const blob = new Blob(['﻿' + csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'estudio_sector_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+document.getElementById('estSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchEstudios(); });
+
+// ================================================================
+// UNSPSC CATALOG
+// ================================================================
+const UNSPSC_CATALOG = [
+  {c:'10000000',d:'Plantas vivas, animales, organismos y accesorios'},
+  {c:'10100000',d:'Animales vivos'},{c:'10150000',d:'Flores, plantas y árboles'},
+  {c:'10170000',d:'Semillas, bulbos, plántulas y esquejes'},
+  {c:'11000000',d:'Minerales, textiles y materiales no comestibles de origen vegetal y animal'},
+  {c:'11100000',d:'Minerales, minerales metálicos y sus derivados'},
+  {c:'11120000',d:'Fibras, hilos e hilados textiles'},
+  {c:'12000000',d:'Productos químicos incluyendo bioquímicos y materiales de gas'},
+  {c:'12130000',d:'Explosivos'},{c:'12140000',d:'Resinas, colofonia y otros productos resinosos'},
+  {c:'12160000',d:'Productos químicos para la purificación del agua y tratamiento de aguas'},
+  {c:'12170000',d:'Colorantes y pigmentos'},
+  {c:'12350000',d:'Compuestos y mezclas químicas'},
+  {c:'14000000',d:'Material de papel, productos de papel y accesorios'},{c:'14100000',d:'Productos de papel'},
+  {c:'14110000',d:'Artículos de papel impresos y no impresos'},
+  {c:'14120000',d:'Material de empaque de papel'},
+  {c:'15000000',d:'Combustibles, aditivos, lubricantes y materiales anticorrosivos'},
+  {c:'15100000',d:'Combustibles'},{c:'15110000',d:'Combustibles gaseosos'},
+  {c:'15120000',d:'Lubricantes, aceites, grasas y anticorrosivos'},
+  {c:'20000000',d:'Maquinaria, equipo y suministros para minería y perforación de pozos'},
+  {c:'20100000',d:'Equipo de minería y canteras'},
+  {c:'21000000',d:'Maquinaria y equipo para agricultura, pesca, silvicultura'},
+  {c:'21100000',d:'Maquinaria agrícola para preparar el suelo'},
+  {c:'21110000',d:'Equipo para aplicación de herbicidas y fertilizantes'},
+  {c:'22000000',d:'Maquinaria y equipo para construcción y mantenimiento de edificios'},
+  {c:'22100000',d:'Maquinaria pesada de construcción'},
+  {c:'23000000',d:'Maquinaria y equipo para manufactura y procesamiento industrial'},
+  {c:'23100000',d:'Maquinaria para corte y conformación de materiales'},
+  {c:'23150000',d:'Maquinaria para procesamiento de alimentos y bebidas'},
+  {c:'24000000',d:'Equipo y maquinaria para manejo de materiales y acondicionamiento'},
+  {c:'24100000',d:'Equipo para manejo y almacenamiento de materiales'},
+  {c:'24110000',d:'Contenedores y almacenamiento'},
+  {c:'25000000',d:'Vehículos comerciales, militares y particulares, accesorios y componentes'},
+  {c:'25100000',d:'Vehículos de motor'},{c:'25110000',d:'Accesorios y componentes de vehículos'},
+  {c:'25170000',d:'Equipo para mantenimiento de vehículos y transporte'},
+  {c:'25180000',d:'Bicicletas y accesorios'},{c:'25190000',d:'Accesorios para transporte'},
+  {c:'26000000',d:'Equipo y suministros eléctricos, de generación y distribución de energía'},
+  {c:'26100000',d:'Equipo de generación de energía'},{c:'26110000',d:'Baterías, pilas y accesorios'},
+  {c:'26120000',d:'Cables, alambres y accesorios eléctricos'},
+  {c:'26130000',d:'Equipos de distribución y control de energía'},
+  {c:'26140000',d:'Iluminación, accesorios y suministros'},
+  {c:'27000000',d:'Herramientas, maquinaria ligera y equipo general'},
+  {c:'27100000',d:'Herramientas de mano'},{c:'27110000',d:'Herramientas de corte'},
+  {c:'27120000',d:'Herramientas eléctricas'},
+  {c:'30000000',d:'Estructuras, materiales y productos de construcción y edificación'},
+  {c:'30100000',d:'Materiales estructurales'},{c:'30110000',d:'Materiales de cemento y hormigón'},
+  {c:'30120000',d:'Materiales de acero y hierro'},{c:'30130000',d:'Materiales de madera'},
+  {c:'30150000',d:'Materiales para techos y paredes'},
+  {c:'30160000',d:'Materiales de tuberías y fontanería'},
+  {c:'30170000',d:'Pinturas, acabados, sellantes y adhesivos'},
+  {c:'30180000',d:'Materiales y productos eléctricos'},
+  {c:'30190000',d:'Materiales de vidrio y cerámicos'},
+  {c:'31000000',d:'Componentes y suministros de manufactura'},
+  {c:'31160000',d:'Hardware (cerraduras, manijas, herrajes)'},
+  {c:'31200000',d:'Sellos, anillos y empaques'},
+  {c:'32000000',d:'Componentes y suministros electrónicos'},
+  {c:'32100000',d:'Circuitos impresos y componentes electrónicos'},
+  {c:'39000000',d:'Lámparas, iluminación y accesorios eléctricos'},
+  {c:'39100000',d:'Lámparas y bombillas'},
+  {c:'40000000',d:'Equipo de calefacción, ventilación y aire acondicionado (HVAC)'},
+  {c:'40100000',d:'Calefacción y aire acondicionado'},
+  {c:'40140000',d:'Equipo de ventilación'},
+  {c:'40150000',d:'Equipo de refrigeración'},
+  {c:'40160000',d:'Equipo de purificación de aire'},
+  {c:'41000000',d:'Equipo de laboratorio, medición, observación y prueba'},
+  {c:'41100000',d:'Instrumentos de medición y observación'},
+  {c:'41110000',d:'Equipo de laboratorio'},
+  {c:'41120000',d:'Instrumentos de prueba'},
+  {c:'42000000',d:'Equipo y suministros médicos'},
+  {c:'42130000',d:'Suministros médicos consumibles'},
+  {c:'42140000',d:'Instrumental quirúrgico y accesorios'},
+  {c:'42150000',d:'Equipo de diagnóstico'},
+  {c:'42170000',d:'Equipo odontológico'},
+  {c:'42180000',d:'Productos farmacéuticos'},
+  {c:'42200000',d:'Equipo y suministros de primeros auxilios'},
+  {c:'42210000',d:'Insumos de protección y seguridad hospitalaria'},
+  {c:'42290000',d:'Insumos de limpieza y desinfección médica'},
+  {c:'42300000',d:'Suministros de laboratorio clínico'},
+  {c:'43000000',d:'Tecnología de la información, telecomunicaciones y difusión'},
+  {c:'43200000',d:'Componentes y equipos de tecnología de la información'},
+  {c:'43210000',d:'Computadores y dispositivos de procesamiento'},
+  {c:'43211500',d:'Computadores de escritorio'},
+  {c:'43211503',d:'Computadores portátiles (laptops)'},
+  {c:'43211507',d:'Tablets'},
+  {c:'43211600',d:'Chasis, torres y gabinetes'},
+  {c:'43211700',d:'Accesorios de computadores'},
+  {c:'43220000',d:'Equipos de almacenamiento de datos'},
+  {c:'43230000',d:'Software'},
+  {c:'43231500',d:'Software de negocios y finanzas'},
+  {c:'43231600',d:'Software de gestión de proyectos'},
+  {c:'43232000',d:'Software de sistemas de gestión de bases de datos'},
+  {c:'43232100',d:'Software de desarrollo y programación'},
+  {c:'43232200',d:'Software de gestión de redes'},
+  {c:'43232300',d:'Software de seguridad informática'},
+  {c:'43232400',d:'Software de ofimática'},
+  {c:'43232500',d:'Software de gestión de contenidos'},
+  {c:'43232600',d:'Software de sistemas operativos'},
+  {c:'43232700',d:'Software de correo electrónico'},
+  {c:'43232800',d:'Software de comunicaciones'},
+  {c:'43232900',d:'Software ERP y planificación de recursos'},
+  {c:'43233000',d:'Software de diseño, CAD y modelado'},
+  {c:'43233200',d:'Software de inteligencia artificial y machine learning'},
+  {c:'43233400',d:'Software educativo'},
+  {c:'43233500',d:'Software GIS y georreferenciación'},
+  {c:'43233700',d:'Software de gestión documental'},
+  {c:'43240000',d:'Equipos de red y comunicaciones'},
+  {c:'43250000',d:'Equipos de telecomunicaciones'},
+  {c:'44000000',d:'Maquinaria, equipo y suministros de oficina'},
+  {c:'44100000',d:'Maquinaria y equipo de oficina'},
+  {c:'44110000',d:'Impresoras, copiadoras y fax'},
+  {c:'44120000',d:'Suministros de oficina'},
+  {c:'44121500',d:'Carpetas, archivadores y accesorios de archivo'},
+  {c:'44121600',d:'Bolígrafos, lápices y marcadores'},
+  {c:'44121700',d:'Cintas adhesivas y pegamentos'},
+  {c:'44121800',d:'Papel para impresión y escritura'},
+  {c:'44122000',d:'Artículos de escritorio varios'},
+  {c:'45000000',d:'Equipo de impresión, fotografía y audiovisual'},
+  {c:'45100000',d:'Equipo de impresión y publicación'},
+  {c:'46000000',d:'Equipo y suministros de defensa, seguridad y protección'},
+  {c:'46170000',d:'Equipo de seguridad y vigilancia'},
+  {c:'46180000',d:'Equipo de protección personal (EPP)'},
+  {c:'46181500',d:'Cascos y protección para la cabeza'},
+  {c:'46181600',d:'Gafas y protección visual'},
+  {c:'46181700',d:'Guantes de protección'},
+  {c:'46181800',d:'Protección respiratoria'},
+  {c:'46181900',d:'Protección auditiva'},
+  {c:'46182000',d:'Ropa de protección y alta visibilidad'},
+  {c:'46182200',d:'Calzado de seguridad'},
+  {c:'46190000',d:'Equipo contra incendios'},
+  {c:'47000000',d:'Equipo y suministros de limpieza'},
+  {c:'47130000',d:'Suministros de limpieza'},
+  {c:'47131500',d:'Jabones y detergentes'},
+  {c:'47131600',d:'Desinfectantes y germicidas'},
+  {c:'47131700',d:'Trapos, esponjas y paños de limpieza'},
+  {c:'47131800',d:'Bolsas y recipientes para residuos'},
+  {c:'48000000',d:'Equipo y suministros de servicio de alimentación y restaurante'},
+  {c:'48100000',d:'Equipo de cocina y servicio'},
+  {c:'49000000',d:'Equipos deportivos, recreativos y accesorios'},
+  {c:'49200000',d:'Equipos de juego y recreación'},
+  {c:'50000000',d:'Alimentos, bebidas y tabaco'},
+  {c:'50100000',d:'Frutas, verduras y nueces'},
+  {c:'50110000',d:'Productos de carne y aves'},
+  {c:'50130000',d:'Productos lácteos y huevos'},
+  {c:'50150000',d:'Aceites y grasas comestibles'},
+  {c:'50160000',d:'Confitería y dulces'},
+  {c:'50170000',d:'Granos, cereales y harinas'},
+  {c:'50180000',d:'Productos de panadería'},
+  {c:'50190000',d:'Alimentos preparados y conservados'},
+  {c:'50200000',d:'Bebidas'},
+  {c:'50210000',d:'Tabaco y accesorios'},
+  {c:'50220000',d:'Condimentos y salsas'},
+  {c:'51000000',d:'Drogas y productos farmacéuticos'},
+  {c:'51100000',d:'Medicamentos anti-infecciosos'},
+  {c:'51200000',d:'Agentes cardiovasculares'},
+  {c:'52000000',d:'Muebles domésticos, institucionales y de oficina'},
+  {c:'52140000',d:'Muebles institucionales y de oficina'},
+  {c:'52141500',d:'Escritorios y mesas de oficina'},
+  {c:'52141600',d:'Sillas y sillones de oficina'},
+  {c:'52150000',d:'Muebles y accesorios de dormitorio'},
+  {c:'52160000',d:'Cortinas, persianas y alfombras'},
+  {c:'52170000',d:'Muebles para exterior y jardín'},
+  {c:'53000000',d:'Ropa, maletas y productos personales'},
+  {c:'53100000',d:'Ropa'},
+  {c:'53110000',d:'Calzado'},
+  {c:'53130000',d:'Uniformes y dotación'},
+  {c:'55000000',d:'Publicaciones impresas, publicaciones electrónicas y accesorios'},
+  {c:'55100000',d:'Libros y publicaciones impresas'},
+  {c:'55110000',d:'Publicaciones electrónicas y material multimedia'},
+  {c:'56000000',d:'Muebles, mobiliario y decoración'},
+  {c:'56100000',d:'Mobiliario de alojamiento'},
+  {c:'60000000',d:'Instrumentos musicales, juegos, artículos de arte'},
+  {c:'60100000',d:'Instrumentos musicales'},
+  {c:'60120000',d:'Materiales de arte y manualidades'},
+  {c:'70000000',d:'Servicios de agricultura, silvicultura, pesca'},
+  {c:'70100000',d:'Servicios de cultivo y cosecha'},
+  {c:'70110000',d:'Servicios de pesca'},
+  {c:'70120000',d:'Servicios veterinarios'},
+  {c:'70130000',d:'Servicios de silvicultura'},
+  {c:'70140000',d:'Servicios de fauna y flora silvestre'},
+  {c:'70150000',d:'Servicios de manejo de plagas'},
+  {c:'70160000',d:'Servicios de manejo de recursos hídricos'},
+  {c:'70170000',d:'Servicios de gestión ambiental'},
+  {c:'70171500',d:'Evaluación de impacto ambiental'},
+  {c:'70171600',d:'Servicios de planificación ambiental'},
+  {c:'70171700',d:'Servicios de gestión de calidad del aire'},
+  {c:'70171800',d:'Servicios de gestión de contaminación'},
+  {c:'70171900',d:'Servicios de manejo y reciclaje de residuos'},
+  {c:'70172000',d:'Servicios de gestión de aguas residuales'},
+  {c:'71000000',d:'Servicios de minería, petróleo y gas'},
+  {c:'71100000',d:'Servicios de minería'},
+  {c:'71120000',d:'Servicios de exploración de petróleo y gas'},
+  {c:'72000000',d:'Servicios de edificación, construcción de instalaciones y mantenimiento'},
+  {c:'72100000',d:'Servicios de construcción de edificaciones'},
+  {c:'72110000',d:'Servicios de demolición'},
+  {c:'72120000',d:'Servicios de preparación del sitio de obra'},
+  {c:'72130000',d:'Servicios de construcción de estructuras'},
+  {c:'72140000',d:'Servicios de construcción pesada y civil'},
+  {c:'72141000',d:'Servicios de construcción de carreteras y vías'},
+  {c:'72141100',d:'Servicios de construcción de puentes y túneles'},
+  {c:'72141500',d:'Servicios de construcción de sistemas de acueducto'},
+  {c:'72150000',d:'Servicios de instalación, mantenimiento y reparación'},
+  {c:'72151500',d:'Servicios de mantenimiento de edificios'},
+  {c:'72151600',d:'Servicios de mantenimiento e instalación eléctrica'},
+  {c:'72151700',d:'Servicios de mantenimiento de plomería e hidrosanitario'},
+  {c:'72152000',d:'Servicios de pintura e impermeabilización'},
+  {c:'72153000',d:'Servicios de mantenimiento de vías'},
+  {c:'72154000',d:'Servicios de carpintería y ebanistería'},
+  {c:'73000000',d:'Servicios de producción industrial y manufactura'},
+  {c:'73150000',d:'Servicios de impresión'},
+  {c:'73160000',d:'Servicios de producción de hierro y acero'},
+  {c:'76000000',d:'Servicios de limpieza industrial y residuos'},
+  {c:'76100000',d:'Servicios de descontaminación'},
+  {c:'76110000',d:'Servicios de recolección y manejo de residuos'},
+  {c:'76120000',d:'Servicios de reciclaje y recuperación'},
+  {c:'76130000',d:'Servicios de limpieza de edificaciones'},
+  {c:'77000000',d:'Servicios medioambientales'},
+  {c:'77100000',d:'Servicios de gestión medioambiental'},
+  {c:'77101500',d:'Servicios de asesoría ambiental'},
+  {c:'77101600',d:'Servicios de auditoría ambiental'},
+  {c:'77101700',d:'Servicios de remediación ambiental'},
+  {c:'77101800',d:'Servicios de contaminación del suelo'},
+  {c:'77101900',d:'Servicios de monitoreo ambiental'},
+  {c:'77102000',d:'Servicios de conservación y biodiversidad'},
+  {c:'77110000',d:'Servicios de protección ambiental'},
+  {c:'77111500',d:'Control de contaminación del agua'},
+  {c:'77111600',d:'Control de contaminación del aire'},
+  {c:'77111700',d:'Control de ruido y vibraciones'},
+  {c:'77120000',d:'Servicios de rehabilitación ambiental'},
+  {c:'77130000',d:'Desarrollo y protección forestal'},
+  {c:'77131500',d:'Servicios de reforestación'},
+  {c:'77131600',d:'Gestión forestal y silvicultura'},
+  {c:'77131700',d:'Prevención y control de incendios forestales'},
+  {c:'78000000',d:'Servicios de transporte, almacenaje y correo'},
+  {c:'78100000',d:'Servicios de transporte de carga'},
+  {c:'78110000',d:'Servicios de transporte de pasajeros'},
+  {c:'78111800',d:'Servicios de transporte terrestre de pasajeros'},
+  {c:'78120000',d:'Servicios de empaque y embalaje'},
+  {c:'78130000',d:'Servicios de almacenamiento y depósito'},
+  {c:'78140000',d:'Servicios postales y de mensajería'},
+  {c:'80000000',d:'Servicios de gestión, servicios profesionales de empresa y administrativos'},
+  {c:'80100000',d:'Servicios de asesoría de gestión'},
+  {c:'80101500',d:'Servicios de asesoría en administración'},
+  {c:'80101600',d:'Servicios de planificación estratégica'},
+  {c:'80101700',d:'Servicios de gestión de proyectos'},
+  {c:'80110000',d:'Servicios de recursos humanos'},
+  {c:'80111500',d:'Desarrollo de recursos humanos'},
+  {c:'80111600',d:'Servicios de personal temporal'},
+  {c:'80111700',d:'Reclutamiento de personal'},
+  {c:'80120000',d:'Servicios legales'},
+  {c:'80121500',d:'Servicios de asesoría legal'},
+  {c:'80121600',d:'Servicios de derecho comercial y contractual'},
+  {c:'80121700',d:'Servicios de derecho público y constitucional'},
+  {c:'80130000',d:'Servicios inmobiliarios'},
+  {c:'80131500',d:'Arrendamiento y alquiler de inmuebles'},
+  {c:'80140000',d:'Servicios de mercadeo y distribución'},
+  {c:'80141500',d:'Servicios de mercadeo'},
+  {c:'80141600',d:'Servicios de publicidad'},
+  {c:'80141700',d:'Servicios de relaciones públicas'},
+  {c:'80141900',d:'Servicios de diseño gráfico'},
+  {c:'80150000',d:'Servicios de comercio internacional'},
+  {c:'80160000',d:'Servicios de gestión organizacional'},
+  {c:'80161500',d:'Servicios de apoyo gerencial'},
+  {c:'80161800',d:'Servicios de gestión de calidad'},
+  {c:'81000000',d:'Servicios de ingeniería, investigación, tecnología y ciencias'},
+  {c:'81100000',d:'Servicios de ingeniería'},
+  {c:'81101500',d:'Ingeniería civil y arquitectura'},
+  {c:'81101600',d:'Ingeniería mecánica'},
+  {c:'81101700',d:'Ingeniería eléctrica y electrónica'},
+  {c:'81101800',d:'Ingeniería química'},
+  {c:'81101900',d:'Ingeniería de petróleo y gas'},
+  {c:'81102000',d:'Ingeniería de minas'},
+  {c:'81102100',d:'Ingeniería ambiental'},
+  {c:'81102200',d:'Ingeniería de transporte'},
+  {c:'81102400',d:'Ingeniería industrial'},
+  {c:'81110000',d:'Servicios informáticos'},
+  {c:'81111500',d:'Ingeniería de software y desarrollo'},
+  {c:'81111600',d:'Programación y desarrollo web'},
+  {c:'81111700',d:'Gestión y soporte de sistemas'},
+  {c:'81111800',d:'Servicios de seguridad informática y de datos'},
+  {c:'81111900',d:'Análisis de sistemas de información'},
+  {c:'81112000',d:'Servicios de almacenamiento y hosting'},
+  {c:'81112100',d:'Servicios de internet y conectividad'},
+  {c:'81112200',d:'Mantenimiento de software'},
+  {c:'81120000',d:'Servicios de ciencias de la tierra'},
+  {c:'81130000',d:'Investigación y desarrollo'},
+  {c:'81131500',d:'Investigación y desarrollo en ciencias naturales'},
+  {c:'81131600',d:'Investigación en ciencias sociales y humanidades'},
+  {c:'81140000',d:'Servicios de calidad, estándares y testing'},
+  {c:'81141500',d:'Servicios de control de calidad'},
+  {c:'81141600',d:'Servicios de auditoría y certificación'},
+  {c:'81150000',d:'Servicios de cartografía y topografía'},
+  {c:'81151500',d:'Servicios de cartografía'},
+  {c:'81151600',d:'Servicios de topografía y geodesia'},
+  {c:'81151700',d:'Servicios de sistemas de información geográfica (SIG)'},
+  {c:'82000000',d:'Servicios editoriales, de diseño, de artes gráficas y bellas artes'},
+  {c:'82100000',d:'Servicios de publicación'},
+  {c:'82110000',d:'Servicios de diseño'},
+  {c:'82120000',d:'Servicios de producción fotográfica y cinematográfica'},
+  {c:'82130000',d:'Servicios de traducción e interpretación'},
+  {c:'82140000',d:'Servicios de artes gráficas'},
+  {c:'82150000',d:'Servicios de entretenimiento y producción de eventos'},
+  {c:'83000000',d:'Servicios públicos y servicios relacionados con el sector público'},
+  {c:'83100000',d:'Servicios de agua y alcantarillado'},
+  {c:'83110000',d:'Servicios de energía eléctrica'},
+  {c:'83120000',d:'Servicios de gas'},
+  {c:'83130000',d:'Servicios de telecomunicaciones'},
+  {c:'84000000',d:'Servicios financieros y de seguros'},
+  {c:'84100000',d:'Servicios financieros y de banca'},
+  {c:'84110000',d:'Servicios contables y de auditoría financiera'},
+  {c:'84111500',d:'Servicios de contabilidad'},
+  {c:'84111600',d:'Auditoría financiera'},
+  {c:'84111700',d:'Servicios de impuestos y tributación'},
+  {c:'84120000',d:'Servicios de seguros y pensiones'},
+  {c:'84121500',d:'Seguros de vida y salud'},
+  {c:'84121600',d:'Seguros de accidentes'},
+  {c:'84121700',d:'Seguros de vehículos'},
+  {c:'84121800',d:'Seguros de propiedad e inmuebles'},
+  {c:'84130000',d:'Servicios de crédito'},
+  {c:'85000000',d:'Servicios de salud'},
+  {c:'85100000',d:'Servicios integrales de salud'},
+  {c:'85110000',d:'Servicios de prevención y control de enfermedades'},
+  {c:'85120000',d:'Servicios médicos'},
+  {c:'85130000',d:'Servicios de medicina alternativa'},
+  {c:'85140000',d:'Servicios de alimentación y nutrición'},
+  {c:'85150000',d:'Servicios de bienestar social'},
+  {c:'86000000',d:'Servicios educativos y de formación'},
+  {c:'86100000',d:'Servicios de formación vocacional'},
+  {c:'86110000',d:'Formación vocacional alternativa'},
+  {c:'86120000',d:'Servicios de capacitación'},
+  {c:'86130000',d:'Educación de adultos y continuada'},
+  {c:'86140000',d:'Servicios educativos especializados'},
+  {c:'86141500',d:'Capacitación en informática y tecnología'},
+  {c:'86141600',d:'Capacitación en gestión y liderazgo'},
+  {c:'86141700',d:'Capacitación en salud y seguridad en el trabajo'},
+  {c:'90000000',d:'Servicios de viajes, alimentación, alojamiento y entretenimiento'},
+  {c:'90100000',d:'Servicios de restaurantes y catering'},
+  {c:'90101600',d:'Servicios de catering para eventos'},
+  {c:'90110000',d:'Servicios de hoteles y alojamiento'},
+  {c:'90120000',d:'Servicios de agencias de viaje'},
+  {c:'90130000',d:'Servicios de entretenimiento y eventos'},
+  {c:'90150000',d:'Servicios de alimentación institucional'},
+  {c:'91000000',d:'Servicios de cuidado personal y doméstico'},
+  {c:'91100000',d:'Servicios de lavandería y tintorería'},
+  {c:'91110000',d:'Servicios de peluquería y salón'},
+  {c:'92000000',d:'Servicios de defensa nacional y seguridad pública'},
+  {c:'92100000',d:'Servicios de seguridad pública y orden'},
+  {c:'92110000',d:'Servicios de defensa militar'},
+  {c:'92120000',d:'Servicios de protección civil y prevención de desastres'},
+  {c:'93000000',d:'Servicios políticos y asuntos cívicos'},
+  {c:'93130000',d:'Administración pública'},
+  {c:'93131500',d:'Servicios de administración pública general'},
+  {c:'93131600',d:'Servicios de planificación económica y social'},
+  {c:'93140000',d:'Organizaciones comunitarias y sociales'},
+  {c:'93141500',d:'Desarrollo comunitario y participación ciudadana'},
+  {c:'93141600',d:'Asistencia humanitaria y desarrollo social'},
+  {c:'93150000',d:'Desarrollo y asistencia de vivienda'},
+  {c:'93151500',d:'Programas de vivienda y urbanismo'},
+  {c:'93151600',d:'Desarrollo urbano y territorial'},
+  {c:'94000000',d:'Organizaciones y clubes'},
+  {c:'94130000',d:'Organizaciones humanitarias'},
+  {c:'95000000',d:'Terrenos, edificios, estructuras y vías'},
+  {c:'95100000',d:'Terrenos y lotes'},
+  {c:'95120000',d:'Edificios e instalaciones permanentes'},
+  {c:'95130000',d:'Instalaciones y estructuras especializadas'},
+  {c:'95140000',d:'Vías y carreteras'},
+].sort((a,b)=>a.c.localeCompare(b.c));
+
+document.getElementById('unspscSearchInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchUnspsc(); });
+document.getElementById('unspscSearchInput').addEventListener('input', function() {
+  if (this.value.trim().length >= 2) searchUnspsc();
+  else {
+    document.getElementById('unspscSearchCount').textContent = '';
+    document.getElementById('unspscSearchResults').innerHTML = '<div class="status-msg" style="padding:20px;">Escribe un producto, servicio o código numérico para buscar</div>';
+  }
+});
+
+function searchUnspsc() {
+  const q = document.getElementById('unspscSearchInput').value.trim().toLowerCase();
+  if (!q || q.length < 2) return;
+  const area = document.getElementById('unspscSearchResults');
+  const countEl = document.getElementById('unspscSearchCount');
+  const isCode = /^\d+$/.test(q);
+
+  let results;
+  if (isCode) {
+    results = UNSPSC_CATALOG.filter(item => item.c.startsWith(q));
+  } else {
+    const words = q.normalize('NFD').replace(/[̀-ͯ]/g,'').split(/\s+/);
+    results = UNSPSC_CATALOG.filter(item => {
+      const text = item.d.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+      return words.every(w => text.includes(w));
+    });
+  }
+
+  if (!results.length) {
+    countEl.textContent = '';
+    area.innerHTML = '<div class="status-msg" style="padding:16px;">No se encontraron códigos para "' + esc(q) + '". Intenta con otra palabra clave.</div>';
+    return;
+  }
+
+  const shown = results.slice(0, 40);
+  countEl.textContent = results.length + ' resultado' + (results.length !== 1 ? 's' : '') + (results.length > 40 ? ' (mostrando 40)' : '');
+  renderUnspscResults(shown);
+}
+
+function getUnspscLevel(code) {
+  if (!code) return '';
+  const c = code.replace(/[^0-9]/g, '');
+  if (c.length <= 2) return 'Segmento';
+  if (c.length <= 4) return 'Familia';
+  if (c.length <= 6) return 'Clase';
+  return 'Producto';
+}
+
+function renderUnspscResults(results) {
+  const area = document.getElementById('unspscSearchResults');
+  let h = '<div class="unspsc-results">';
+  for (const r of results) {
+    const code = r.c;
+    const desc = r.d;
+    const level = getUnspscLevel(code);
+    const isAdded = profile.unspsc.includes(code);
+    h += '<div class="unspsc-item' + (isAdded ? ' added' : '') + '" onclick="' + (isAdded ? '' : 'addUnspscFromSearch(this,\'' + code + '\')') + '">';
+    h += '<div><span class="unspsc-code">' + esc(code) + '</span></div>';
+    h += '<div style="flex:1;"><div class="unspsc-desc">' + esc(desc) + '</div>';
+    if (level) h += '<span class="unspsc-level">' + level + '</span>';
+    h += '</div>';
+    if (isAdded) h += '<span class="unspsc-added-icon">Agregado</span>';
+    else h += '<span style="font-size:.75rem;color:var(--fg-muted);white-space:nowrap;margin-left:auto;">+ Agregar</span>';
+    h += '</div>';
+  }
+  h += '</div>';
+  h += '<p style="font-size:.72rem;color:var(--fg-muted);margin-top:10px;text-align:center;">Clasificación UNSPSC · Colombia Compra Eficiente</p>';
+  area.innerHTML = h;
+}
+
+function addUnspscFromSearch(el, code) {
+  if (!profile.unspsc.includes(code)) {
+    profile.unspsc.push(code);
+    renderChips();
+  }
+  el.classList.add('added');
+  el.onclick = null;
+  el.querySelector('.unspsc-code').style.color = 'var(--success)';
+  const addLabel = el.querySelector('span:last-child');
+  if (addLabel) { addLabel.className = 'unspsc-added-icon'; addLabel.textContent = 'Agregado'; }
+}
+
+// ================================================================
+// INIT
+// ================================================================
+loadProfile();
+</script>
+</body>
+</html>
